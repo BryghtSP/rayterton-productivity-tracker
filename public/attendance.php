@@ -3,8 +3,6 @@ require_once __DIR__ . '/../lib/db.php';
 require_once __DIR__ . '/../lib/auth.php';
 require_login();
 
-// date_default_timezone_set(timezoneId: 'Asia/Jakarta'); // Pastikan timezone benar
-
 $user_id = $_SESSION['user']['user_id'];
 $today = date('Y-m-d');
 
@@ -12,20 +10,21 @@ $today = date('Y-m-d');
 
 // Handle check-in/out/izin
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['check_in'])) {
+    if (isset($_POST['submitCheckIn'])) {
         $current_time = date('H:i:s');
         $status = 'Hadir';
-        
+        $location = trim($_POST['location']);
+
         if ($current_time > '13:10:00') {
             $status = 'Alpa';
         } elseif ($current_time > '07:30:00') {
             $status = 'Telat';
         }
-        
-        $stmt = $pdo->prepare("INSERT INTO attendance (user_id, date, check_in, status) 
-                              VALUES (?, ?, ?, ?)
-                              ON DUPLICATE KEY UPDATE check_in = VALUES(check_in), status = VALUES(status)");
-        $stmt->execute([$user_id, $today, $current_time, $status]);
+
+        $stmt = $pdo->prepare("INSERT INTO attendance (user_id, date, check_in, status, location) 
+                              VALUES (?, ?, ?, ?, ?)
+                              ON DUPLICATE KEY UPDATE check_in = VALUES(check_in), status = VALUES(status), location = VALUES(location)");
+        $stmt->execute([$user_id, $today, $current_time, $status, $location]);
     } 
     elseif (isset($_POST['check_out'])) {
         $stmt = $pdo->prepare("UPDATE attendance SET check_out = ? 
@@ -39,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                               ON DUPLICATE KEY UPDATE status='Izin', notes=VALUES(notes)");
         $stmt->execute([$user_id, $today, $notes]);
     }
-    
+
     header("Location: attendance.php");
     exit;
 }
@@ -54,7 +53,7 @@ $month = $_GET['month'] ?? date('Y-m');
 $start = $month . "-01";
 $end = date('Y-m-t', strtotime($start));
 
-$stmt = $pdo->prepare("SELECT date, check_in, check_out, status, notes
+$stmt = $pdo->prepare("SELECT date, check_in, check_out, status, location, notes
                       FROM attendance 
                       WHERE user_id = ? AND date BETWEEN ? AND ?
                       ORDER BY date DESC");
@@ -68,23 +67,27 @@ include __DIR__ . '/header.php';
   <!-- Today's Attendance Card -->
   <div class="bg-white rounded-xl shadow-md overflow-hidden">
     <div class="p-6 md:p-8">
-      <h1 class=" text-2xl font-bold text-gray-800 mb-6">Absent Today (<?= date('d F Y') ?>)</h1>
-      
-      <div class="flex flex-col sm:flex-row gap-4 mb-6">
-        <form method="post" class="flex-1">
-           <button type="submit" name="check_in" 
-          class="w-full py-3 px-4 <?= 
-              ($attendance && ($attendance['check_in'] || $attendance['status'] === 'Izin')) 
-                  ? 'bg-gray-300 cursor-not-allowed' 
-                  : 'bg-green-600 hover:bg-green-700' ?> 
-          text-white font-medium rounded-lg transition"
-                <?= ($attendance && ($attendance['check_in'] || $attendance['status'] === 'Izin')) ? 'disabled' : '' ?>>
-            <?= $attendance && $attendance['check_in'] 
-                ? 'Sudah Check-in (' . $attendance['check_in'] . ')' 
-                : ($attendance && $attendance['status'] === 'Izin' ? 'Sudah Izin' : 'Check-in') ?>
-      </button>
-        </form>
-        
+      <h1 class="text-2xl font-bold text-gray-800 mb-6">Absent Today (<?= date('d F Y') ?>)</h1>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <!-- Tombol Check-in (buka modal) -->
+        <button 
+          type="button" 
+          id="btnCheckIn" 
+          data-can-checkin="<?= !($attendance && ($attendance['check_in'] || $attendance['status'] === 'Izin')) ? 'true' : 'false' ?>"
+          class="w-full py-3 px-4 
+            <?= ($attendance && ($attendance['check_in'] || $attendance['status'] === 'Izin')) 
+              ? 'bg-gray-300 cursor-not-allowed' 
+              : 'bg-green-600 hover:bg-green-700' ?> 
+            text-white font-medium rounded-lg transition"
+          <?= ($attendance && ($attendance['check_in'] || $attendance['status'] === 'Izin')) ? 'disabled' : '' ?>
+        >
+          <?= $attendance && $attendance['check_in'] 
+            ? 'Sudah Check-in (' . $attendance['check_in'] . ')' 
+            : ($attendance && $attendance['status'] === 'Izin' ? 'Sudah Izin' : 'Check-in') ?>
+        </button>
+
+        <!-- Check-out -->
         <form method="post" class="flex-1">
           <button type="submit" name="check_out" 
                   class="w-full py-3 px-4 <?= !$attendance || !$attendance['check_in'] || $attendance['check_out'] ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700' ?> 
@@ -102,12 +105,33 @@ include __DIR__ . '/header.php';
                         : 'bg-yellow-500 hover:bg-yellow-600' ?> 
                 text-white font-medium rounded-lg transition"
                 <?= ($attendance && $attendance['check_in']) ? 'disabled' : '' ?>>
-        <?= ($attendance && $attendance['check_in']) ? 'Sudah Check-in' : 'Izin' ?>
+          <?= ($attendance && $attendance['check_in']) ? 'Sudah Check-in' : 'Izin' ?>
         </button>
       </div>
 
+      <!-- Modal Check-in dengan Input Lokasi -->
+      <div id="modalCheckIn" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+          <h2 class="text-lg font-bold mb-4">Konfirmasi Check-in</h2>
+          <form method="post">
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-1">Lokasi</label>
+              <input type="text"
+                     name="location"
+                     placeholder="Kantor, WFH, Lapangan"
+                     class="w-full border rounded-lg p-2"
+                     required>
+            </div>
+            <div class="flex justify-end gap-2">
+              <button type="button" id="closeModalCheckIn" class="px-4 py-2 bg-gray-300 rounded-lg">Batal</button>
+              <button type="submit" name="submitCheckIn" class="px-4 py-2 bg-green-600 text-white rounded-lg">Submit</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <!-- Modal Izin -->
-      <div id="modalIzin" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden md:px-0 px-2">
+      <div id="modalIzin" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
           <h2 class="text-lg font-bold mb-4">Form Izin</h2>
           <form method="post">
@@ -121,40 +145,28 @@ include __DIR__ . '/header.php';
         </div>
       </div>
 
-      <script>
-        document.getElementById('btnIzin').addEventListener('click', function() {
-        <?php if ($attendance && $attendance['check_in']): ?>
-            alert('Anda sudah Check-in, tidak bisa mengajukan izin.');
-        <?php else: ?>
-            document.getElementById('modalIzin').classList.remove('hidden');
-        <?php endif; ?>
-        });
-
-        document.getElementById('btnIzin').addEventListener('click', function() {
-          document.getElementById('modalIzin').classList.remove('hidden');
-        });
-        document.getElementById('closeModal').addEventListener('click', function() {
-          document.getElementById('modalIzin').classList.add('hidden');
-        });
-      </script>
-      
+      <!-- Tampilkan Status Hari Ini -->
       <?php if ($attendance): ?>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-        <div class="bg-gray-50 p-4 rounded-lg">
-          <p class="text-sm text-gray-500">Status</p>
-          <p class="font-medium <?= $attendance['status'] === 'Hadir' ? 'text-green-600' : ($attendance['status'] === 'Telat' ? 'text-yellow-600' : 'text-red-600') ?>">
-            <?= $attendance['status'] ?>
-          </p>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-sm text-gray-500">Status</p>
+            <p class="font-medium <?= $attendance['status'] === 'Hadir' ? 'text-green-600' : ($attendance['status'] === 'Telat' ? 'text-yellow-600' : 'text-red-600') ?>">
+              <?= $attendance['status'] ?>
+            </p>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-sm text-gray-500">Check-in</p>
+            <p class="font-medium"><?= $attendance['check_in'] ?? '-' ?></p>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-sm text-gray-500">Check-out</p>
+            <p class="font-medium"><?= $attendance['check_out'] ?? '-' ?></p>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-sm text-gray-500">Lokasi</p>
+            <p class="font-medium"><?= htmlspecialchars($attendance['location'] ?? '-') ?></p>
+          </div>
         </div>
-        <div class="bg-gray-50 p-4 rounded-lg">
-          <p class="text-sm text-gray-500">Check-in</p>
-          <p class="font-medium"><?= $attendance['check_in'] ?? '-' ?></p>
-        </div>
-        <div class="bg-gray-50 p-4 rounded-lg">
-          <p class="text-sm text-gray-500">Check-out</p>
-          <p class="font-medium"><?= $attendance['check_out'] ?? '-' ?></p>
-        </div>
-      </div>
       <?php endif; ?>
     </div>
   </div>
@@ -181,6 +193,7 @@ include __DIR__ . '/header.php';
               <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Check-in</th>
               <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Check-out</th>
               <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Status</th>
+              <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Location</th>
               <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Notes</th>
             </tr>
           </thead>
@@ -204,6 +217,9 @@ include __DIR__ . '/header.php';
                   <?= htmlspecialchars($record['status']) ?>
                 </span>
               </td>
+              <td class="py-4 whitespace-nowrap text-sm font-medium">
+                <?= htmlspecialchars($record['location'] ?? '-') ?>
+              </td>
               <td class="py-4 whitespace-nowrap text-sm text-gray-600">
                 <?= htmlspecialchars($record['notes'] ?? '-') ?>
               </td>
@@ -215,5 +231,54 @@ include __DIR__ . '/header.php';
     </div>
   </div>
 </div>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btnCheckIn = document.getElementById('btnCheckIn');
+    const modalCheckIn = document.getElementById('modalCheckIn');
+    const closeModalCheckIn = document.getElementById('closeModalCheckIn');
+
+    const btnIzin = document.getElementById('btnIzin');
+    const modalIzin = document.getElementById('modalIzin');
+    const closeModal = document.getElementById('closeModal');
+
+    // Handle Check-in
+    if (btnCheckIn && modalCheckIn) {
+        btnCheckIn.addEventListener('click', function () {
+            const canCheckIn = this.getAttribute('data-can-checkin') === 'true';
+            if (!canCheckIn) {
+                alert('Anda sudah melakukan check-in atau izin hari ini.');
+            } else {
+                modalCheckIn.classList.remove('hidden');
+            }
+        });
+    }
+
+    if (closeModalCheckIn && modalCheckIn) {
+        closeModalCheckIn.addEventListener('click', function () {
+            modalCheckIn.classList.add('hidden');
+        });
+    }
+
+    // Handle Izin
+    if (btnIzin && modalIzin) {
+        btnIzin.addEventListener('click', function () {
+            const attendanceCheckIn = <?= json_encode($attendance && $attendance['check_in']) ?>;
+            if (attendanceCheckIn) {
+                alert('Anda sudah Check-in, tidak bisa mengajukan izin.');
+            } else {
+                modalIzin.classList.remove('hidden');
+            }
+        });
+    }
+
+    if (closeModal && modalIzin) {
+        closeModal.addEventListener('click', function () {
+            modalIzin.classList.add('hidden');
+        });
+    }
+});
+</script>
 
 <?php include __DIR__ . '/footer.php'; ?>

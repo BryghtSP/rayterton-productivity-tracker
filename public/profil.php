@@ -14,11 +14,11 @@ $attendance = $stmt->fetch();
 $current_status = $attendance['status'] ?? 'Belum Absen';
 
 $badge_color = match ($current_status) {
-    'Hadir' => 'text-green-800',
-    'Telat' => 'text-yellow-800',
-    'Izin' => 'text-blue-800',
-    'Alpa' => 'text-red-800',
-    default => 'text-gray-800'
+    'Hadir' => 'bg-green-100 text-green-800',
+    'Telat' => 'bg-yellow-100 text-yellow-800',
+    'Izin' => 'bg-blue-100 text-blue-800',
+    'Alpa' => 'bg-red-100 text-red-800',
+    default => 'bg-gray-100 text-gray-800'
 };
 
 // Tentukan awal dan akhir bulan ini
@@ -50,15 +50,17 @@ $recent_activities_today = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
 // Ambil name dan email
 $stmt3 = $pdo->prepare("
-    SELECT email, name
-    FROM users
-    WHERE user_id = ?
+    SELECT u.email, e.name, e.position
+    FROM users u 
+    LEFT JOIN employees e ON u.user_id = e.user_id
+    WHERE u.user_id = ?
 ");
 $stmt3->execute([$user_id]);
 $user = $stmt3->fetch(PDO::FETCH_ASSOC);
 
-$email = $user['email'];
-$name = $user['name'];
+$email = $user['email'] ?? '';
+$name = $user['name'] ?? 'No Name';
+$position = $user['position'] ?? '';
 
 // Hitung persentase (target 88 job = 100%)
 $target = 88;
@@ -69,93 +71,92 @@ include __DIR__ . '/header.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rayterton Prodtracker - Profil</title>
+    <!-- ✅ CDN Tailwind CSS (tanpa spasi!) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 </head>
-
-<body>
-    <main class="min-h-screen flex items-center justify-center bg-gray-50">
+<body class="bg-gray-50 min-h-screen">
+    <main class="flex items-center justify-center p-4 pt-16 pb-24">
         <!-- Profil Card -->
-        <div class="bg-white rounded-lg shadow-lg p-6 w-full mx-auto max-w-lg text-center">
-            <div class="bg-indigo-500 rounded-t-lg">
-                <!-- Logo / Judul -->
-                <div class="mb-6">
-                    <h1 class="text-xl sm:text-2xl font-bold text-white">Rayterton Productivity Tracker</h1>
-                </div>
-
-                <!-- Foto Profil -->
-                <div class="flex flex-col items-center mb-6">
-                    <img src="/images/kabahkopter.jpg" alt="Profile Picture" class="w-20 h-20 rounded-full border-4 border-white mb-3">
-                    <h2 class="text-xl font-semibold text-white"><?php echo $name; ?></h2>
-                    <p class="text-white"><?php echo $email; ?></p>
-                </div>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-8 text-center">
+                <h1 class="text-xl font-bold text-white mb-6">Rayterton Productivity Tracker</h1>
+                <img src="/images/kabahkopter.jpg" alt="Profile Picture" class="w-20 h-20 rounded-full border-4 border-white mx-auto mb-3">
+                <h2 class="text-2xl font-semibold text-white"><?php echo htmlspecialchars($name); ?></h2>
+                <p class="text-indigo-100 italic"><?php echo htmlspecialchars($position); ?></p>
+                <p class="text-white text-sm mt-1"><?php echo htmlspecialchars($email); ?></p>
             </div>
 
             <!-- Statistik -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 text-sm">
-                <div class="bg-blue-50 p-3 rounded flex flex-col justify-between text-center">
-                    <p class="font-semibold text-blue-800">Job Total</p>
-                    <p class="text-3xl font-bold text-blue-700"><?php echo $total_monthly; ?></p>
-                    <p class="text-xs text-blue-600">of <?php echo $target; ?> targets</p>
-                </div>
-                <div class="bg-green-50 p-3 rounded-lg flex flex-col justify-between text-center">
-                    <p class="font-semibold text-green-800 mb-2">Progress</p>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5 mb-1">
-                        <div class="bg-green-600 h-2.5 rounded-full" style="width: <?php echo $percentage; ?>%"></div>
+            <div class="p-6 space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <!-- Job Total -->
+                    <div class="bg-blue-50 p-4 rounded-xl">
+                        <p class="text-sm font-medium text-blue-800">Job Total</p>
+                        <p class="text-3xl font-bold text-blue-700 mt-1"><?php echo $total_monthly; ?></p>
+                        <p class="text-xs text-blue-600">of <?php echo $target; ?> targets</p>
                     </div>
-                    <p class="text-sm font-bold text-green-700 text-center"><?php echo $percentage; ?>%</p>
-                    <p class="text-xs text-gray-500 text-center"><?php echo $total_monthly; ?>/<?php echo $target; ?> Job</p>
-                </div>
-                <div class="bg-purple-50 p-3 rounded flex flex-col items-center text-center">
-                    <p class="font-semibold text-purple-800">Status</p>
-                    <p class="mt-0 sm:mt-2 text-lg text-orange-600 font-medium <?php echo $badge_color; ?>">
-                        <?php echo htmlspecialchars($current_status); ?>
-                    </p>
-                </div>
-            </div>
 
-            <!-- Recent Activity -->
-            <div class="mb-8">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Current Activity (<?php echo date('d M'); ?>) </h3>
-                <ul class="space-y-3">
-                    <?php if (empty($recent_activities_today)): ?>
-                        <li class="text-gray-500 text-sm text-center py-2">There is no activity today.</li>
-                    <?php else: ?>
-                        <?php foreach ($recent_activities_today as $act): ?>
-                            <li class="p-3 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow transition">
-                                <a href="reports_my.php" class="flex justify-between items-center">
-                                    <div class="flex-1">
-                                        <p class="text-sm sm:text-base font-medium text-gray-800"><?php echo htmlspecialchars($act['title']); ?></p>
-                                        <p class="text-xs sm:text-sm text-gray-600">
-                                            <?php echo htmlspecialchars($act['job_type']); ?> •
-                                            <span class="text-xs text-gray-500">
+                    <!-- Progress -->
+                    <div class="bg-green-50 p-4 rounded-xl">
+                        <p class="text-sm font-medium text-green-800">Progress</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2 mb-1">
+                            <div class="bg-green-600 h-2.5 rounded-full" style="width: <?php echo $percentage; ?>%"></div>
+                        </div>
+                        <p class="text-sm font-bold text-green-700"><?php echo $percentage; ?>%</p>
+                        <p class="text-xs text-gray-500"><?php echo $total_monthly; ?>/<?php echo $target; ?> Job</p>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="bg-purple-50 p-4 rounded-xl">
+                        <p class="text-sm font-medium text-purple-800">Status</p>
+                        <p class="mt-2 text-md font-medium <?php echo $badge_color; ?> px-3 py-1 rounded-full inline-block">
+                            <?php echo htmlspecialchars($current_status); ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Current Activity (<?php echo date('d M'); ?>)</h3>
+                    <ul class="space-y-2">
+                        <?php if (empty($recent_activities_today)): ?>
+                            <li class="text-gray-500 text-sm text-center py-3 bg-gray-50 rounded-lg">No activity today.</li>
+                        <?php else: ?>
+                            <?php foreach ($recent_activities_today as $act): ?>
+                                <li class="p-3 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition">
+                                    <a href="reports_my.php" class="flex justify-between items-center">
+                                        <div class="flex-1 truncate">
+                                            <p class="font-medium text-gray-800 text-sm sm:text-base truncate"><?php echo htmlspecialchars($act['title']); ?></p>
+                                            <p class="text-xs text-gray-600">
+                                                <?php echo htmlspecialchars($act['job_type']); ?> • 
                                                 <?php echo date('H:i', strtotime($act['created_at'])); ?>
-                                            </span>
-                                        </p>
-                                    </div>
-                                    <span class="ml-3 px-2 sm:px-2.5 py-1 text-xs font-medium rounded-full 
-                            <?php echo $act['status'] === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'; ?>">
-                                        <?php echo htmlspecialchars($act['status']); ?>
-                                    </span>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </ul>
-            </div>
+                                            </p>
+                                        </div>
+                                        <span class="ml-3 px-2 py-1 text-xs font-medium rounded-full 
+                                            <?php echo $act['status'] === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'; ?>">
+                                            <?php echo htmlspecialchars($act['status']); ?>
+                                        </span>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </ul>
+                </div>
 
-            <!-- Tombol Aksi -->
-            <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                <a href="change_password.php" class="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Change Password</a>
-                <a href="edit_profil.php" class="px-5 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition">Edit Profil</a>
-                <a href="logout.php" class="px-5 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">Log Out</a>
+                <!-- Tombol Aksi -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-2 items-center">
+                    <a href="change_password.php" class="flex-1 w-[208px] sm:w-[145px] py-3 sm:py-4 flex items-center justify-center bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 transition text-sm font-medium">Change Password</a>
+                    <a href="edit_profil.php" class="flex-1 w-[208px]  sm:w-[145px] py-3 sm:py-4 flex items-center justify-center bg-yellow-500 text-white text-center rounded-lg hover:bg-yellow-600 transition text-sm font-medium">Edit Profil</a>
+                    <a href="logout.php" class="flex-1 w-[208px]  sm:w-[145px] py-3 sm:py-4 flex items-center justify-center bg-red-500 text-white text-center rounded-lg hover:bg-red-600 transition text-sm font-medium">Log Out</a>
+                </div>
             </div>
         </div>
     </main>
 </body>
-
 </html>
