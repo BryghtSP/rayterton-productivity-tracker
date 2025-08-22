@@ -50,15 +50,16 @@ $recent_activities_today = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
 // Ambil name dan email
 $stmt3 = $pdo->prepare("
-    SELECT email, name
-    FROM users
-    WHERE user_id = ?
+    SELECT u.email, e.name
+    FROM users u 
+    LEFT JOIN employees e ON u.user_id = e.user_id
+    WHERE u.user_id = ?
 ");
 $stmt3->execute([$user_id]);
 $user = $stmt3->fetch(PDO::FETCH_ASSOC);
 
-$email = $user['email'];
-$name = $user['name'];
+$email = $user['email'] ?? '';
+$name = $user['name'] ?? 'No Name';
 
 // Hitung persentase (target 88 job = 100%)
 $target = 88;
