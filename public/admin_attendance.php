@@ -50,14 +50,14 @@ include __DIR__ . '/header.php';
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Daily Attendance</h1>
         <form class="flex flex-col sm:flex-row items-center gap-2">
-          <input type="date" name="date" value="<?= htmlspecialchars($date) ?>" 
-                 class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+          <input type="date" name="date" value="<?= htmlspecialchars($date) ?>"
+            class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
           <button type="submit" class="px-4 py-2 w-full sm:w-[68px] bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
             Filter
           </button>
         </form>
       </div>
-      
+
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
@@ -67,41 +67,42 @@ include __DIR__ . '/header.php';
               <th class="pb-3 font-medium text-gray-600">Check-in</th>
               <th class="pb-3 font-medium text-gray-600">Check-out</th>
               <th class="pb-3 font-medium text-gray-600">Status</th>
+              <th class="pb-3 font-medium text-gray-600">Location</th>
               <th class="pb-3 font-medium text-gray-600">Notes</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <?php foreach($daily as $record): ?>
-            <tr class="hover:bg-gray-50 transition">
-              <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                <?= htmlspecialchars($record['name']) ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-gray-600">
-                <?= htmlspecialchars($record['email']) ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm">
-                <?= $record['check_in'] ?? '-' ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm">
-                <?= $record['check_out'] ?? '-' ?>
-              </td>
-              <td class="py-4 whitespace-nowrap">
-                <span class="px-2.5 py-1 rounded-full text-xs font-medium 
-                  <?= $record['status'] === 'Hadir' ? 
-                     (($record['check_in'] <= '07:30:00') ? 'bg-green-100 text-green-800' : 
-                      (($record['check_in'] <= '13:10:00') ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800')) :
-                     ($record['status'] === 'Telat' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') ?>">
-                  <?= htmlspecialchars($record['status']) ?>
-                  <?php if($record['status'] === 'Hadir'): ?>
-                    (<?= $record['check_in'] <= '07:30:00' ? 'Pagi' : 
-                       ($record['check_in'] <= '13:10:00' ? 'Siang' : 'Invalid') ?>)
-                  <?php endif; ?>
-                </span>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-gray-700">
-                <?= !empty($record['notes']) ? htmlspecialchars($record['notes']) : '-' ?>
-            </td>
-            </tr>
+            <?php foreach ($daily as $record): ?>
+              <tr class="hover:bg-gray-50 transition">
+                <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                  <?= htmlspecialchars($record['name']) ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-gray-600">
+                  <?= htmlspecialchars($record['email']) ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm">
+                  <?= $record['check_in'] ?? '-' ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm">
+                  <?= $record['check_out'] ?? '-' ?>
+                </td>
+                <td class="py-4 whitespace-nowrap">
+                  <span class="px-2.5 py-1 rounded-full text-xs font-medium 
+                  <?= $record['status'] === 'Hadir' ?
+                    (($record['check_in'] <= '07:30:00') ? 'bg-green-100 text-green-800' : (($record['check_in'] <= '13:10:00') ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800')) : ($record['status'] === 'Telat' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') ?>">
+                    <?= htmlspecialchars($record['status']) ?>
+                    <?php if ($record['status'] === 'Hadir'): ?>
+                      (<?= $record['check_in'] <= '07:30:00' ? 'Pagi' : ($record['check_in'] <= '13:10:00' ? 'Siang' : 'Invalid') ?>)
+                    <?php endif; ?>
+                  </span>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-gray-700">
+                  <?= htmlspecialchars($record['location']) ?? '-' ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-gray-700">
+                  <?= !empty($record['notes']) ? htmlspecialchars($record['notes']) : '-' ?>
+                </td>
+              </tr>
             <?php endforeach; ?>
           </tbody>
         </table>
@@ -115,14 +116,14 @@ include __DIR__ . '/header.php';
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h2 class="text-xl font-bold text-gray-800">Monthly Recap</h2>
         <form class="flex flex-col sm:flex-row items-center gap-2">
-          <input type="month" name="month" value="<?= htmlspecialchars($month) ?>" 
-                 class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+          <input type="month" name="month" value="<?= htmlspecialchars($month) ?>"
+            class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
           <button type="submit" class="px-4 py-2 w-full sm:w-[68px] bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
             Filter
           </button>
         </form>
       </div>
-      
+
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
@@ -138,33 +139,33 @@ include __DIR__ . '/header.php';
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <?php foreach($monthly as $record): ?>
-            <tr class="hover:bg-gray-50 transition">
-              <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                <?= htmlspecialchars($record['name']) ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-green-600">
-                <?= $record['hadir_shift_pagi'] ?? 0 ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600">
-                <?= $record['hadir_shift_siang'] ?? 0 ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-orange-600">
-                <?= $record['hadir_invalid'] ?? 0 ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-yellow-600">
-                <?= $record['telat'] ?? 0 ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-indigo-600">
-                <?= $record['izin'] ?? 0 ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-purple-600">
-                <?= $record['sakit'] ?? 0 ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-red-600">
-                <?= $record['alpa'] ?? 0 ?>
-              </td>
-            </tr>
+            <?php foreach ($monthly as $record): ?>
+              <tr class="hover:bg-gray-50 transition">
+                <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                  <?= htmlspecialchars($record['name']) ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-green-600">
+                  <?= $record['hadir_shift_pagi'] ?? 0 ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600">
+                  <?= $record['hadir_shift_siang'] ?? 0 ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-orange-600">
+                  <?= $record['hadir_invalid'] ?? 0 ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-yellow-600">
+                  <?= $record['telat'] ?? 0 ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-indigo-600">
+                  <?= $record['izin'] ?? 0 ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-purple-600">
+                  <?= $record['sakit'] ?? 0 ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-red-600">
+                  <?= $record['alpa'] ?? 0 ?>
+                </td>
+              </tr>
             <?php endforeach; ?>
           </tbody>
         </table>
