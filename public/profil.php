@@ -115,7 +115,7 @@ include __DIR__ . '/header.php';
                     <!-- Status -->
                     <div class="bg-purple-50 p-4 rounded-xl">
                         <p class="text-sm font-medium text-purple-800">Status</p>
-                        <p class="mt-2 text-lg font-medium <?php echo $badge_color; ?> px-3 py-1 rounded-full inline-block">
+                        <p class="mt-2 text-md font-medium <?php echo $badge_color; ?> px-3 py-1 rounded-full inline-block">
                             <?php echo htmlspecialchars($current_status); ?>
                         </p>
                     </div>
