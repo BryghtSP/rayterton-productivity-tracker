@@ -17,7 +17,7 @@ $stmt->execute([$user_id]);
 $user = $stmt->fetch();
 
 if (!$user) {
-    die("Pengguna tidak ditemukan.");
+    die("User tidak ditemukan.");
 }
 
 $name = $user['name'];
