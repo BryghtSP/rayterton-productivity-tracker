@@ -8,7 +8,11 @@ $error = '';
 $success = '';
 
 // Ambil data pengguna saat ini
-$stmt = $pdo->prepare("SELECT name, email FROM users WHERE user_id = ?");
+$stmt = $pdo->prepare("
+    SELECT u.email, e.name
+    FROM users u 
+    LEFT JOIN employees e ON u.user_id = e.user_id
+    WHERE u.user_id = ?");
 $stmt->execute([$user_id]);
 $user = $stmt->fetch();
 
