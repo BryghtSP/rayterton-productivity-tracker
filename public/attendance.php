@@ -6,6 +6,8 @@ require_login();
 $user_id = $_SESSION['user']['user_id'];
 $today = date('Y-m-d');
 
+//test commit
+
 // Handle check-in/out/izin
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['submitCheckIn'])) {
