@@ -16,8 +16,8 @@ return [
 
     'down' => function (PDO $pdo) {
         // Hapus kolom location (untuk rollback)
-        $pdo->exec("ALTER TABLE attendance 
-                    DROP COLUMN location");
+        // $pdo->exec("ALTER TABLE attendance 
+        //             DROP COLUMN location");
     }
 ];
 
