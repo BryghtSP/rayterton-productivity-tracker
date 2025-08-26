@@ -1,113 +1,59 @@
 <?php
-// seed_work_force.php
+// seeders/003_seed_employees.php
 
 return [
     'run' => function (PDO $pdo) {
-        echo "Menjalankan seeder untuk tabel employees...\n";
+        echo "Menjalankan seeder untuk tabel employees (dari data users)...\n";
 
-        $data = [
-            [
-                'name' => 'Shaquille Raffalea',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Fazle Adrevi Bintang Al Farrel',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Farel Fadlillah',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Bintang Rayvan',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Iqbal Hadi Mustafa',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Zafira Marvella',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Kirana Firjal Atakhira',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Aisyah Ratna Aulia',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Firyal Dema Elputri',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Halena Maheswari Viehandini',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Hannif Fahmy Fadilah',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Kevin Revaldo',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Achmad wafiq risvyan',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Kurniawan yafi Djayakusuma',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Hildan argiansyah',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Joshua Matthew Hendra',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Fadhal nurul azmi',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
-            [
-                'name' => 'Rasya al zikri',
-                'position' => 'Internship',
-                'phone' => ''
-            ],
+        // Ambil semua user_id dan name dari tabel users
+        $stmtSelectUsers = $pdo->query("
+            SELECT user_id, name 
+            FROM users 
+            WHERE user_id NOT IN (SELECT user_id FROM employees WHERE user_id IS NOT NULL)
+            ORDER BY user_id
+        ");
+
+        $users = $stmtSelectUsers->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($users)) {
+            echo "⚠️  Tidak ada user tersedia atau semua user sudah jadi employee.\n";
+            return;
+        }
+
+        // Data posisi untuk setiap employee
+        $positions = [
+            'Internship', 'Internship', 'Internship', 'Internship',
+            'Internship', 'Internship', 'Internship', 'Internship',
+            'Internship', 'Internship', 'Internship', 'Internship',
+            'Internship', 'Internship', 'Internship', 'Internship',
+            'Internship', 'Internship'
+            // Sesuaikan jumlah dengan jumlah user
         ];
 
-        $stmt = $pdo->prepare("INSERT INTO employees (name, position, phone) VALUES (:name, :position, :phone)");
+        // Persiapkan statement insert ke employees
+        $stmtInsert = $pdo->prepare("
+            INSERT INTO employees (name, position, user_id) 
+            VALUES (:name, :position, :user_id)
+        ");
 
-        foreach ($data as $row) {
+        $inserted = 0;
+
+        foreach ($users as $index => $user) {
+            $position = $positions[$index] ?? 'Internship'; // fallback jika kekurangan data posisi
+
             try {
-                $stmt->execute($row);
-            } catch (Exception $e) {
-                echo "Gagal insert employees {$row['name']}: " . $e->getMessage() . "\n";
+                $stmtInsert->execute([
+                    'name' => $user['name'],
+                    'position' => $position,
+                    'user_id' => $user['user_id']
+                ]);
+                echo "✅ Employee dibuat: {$user['name']} (Position: $position, User ID: $user[user_id])\n";
+                $inserted++;
+            } catch (PDOException $e) {
+                echo "❌ Gagal insert employee untuk {$user['name']}: " . $e->getMessage() . "\n";
             }
         }
 
-        echo "Seeder work_force selesai.\n";
+        echo "Seeder employees selesai. $inserted data berhasil dimasukkan.\n";
     }
 ];

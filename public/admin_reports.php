@@ -9,9 +9,13 @@ $end = date('Y-m-t', strtotime($start));
 
 // all reports
 $stmt = $pdo->prepare("
-  SELECT pr.*, u.name
+  SELECT 
+    pr.*, 
+    u.name,
+    wf.workforce_name
   FROM production_reports pr
   JOIN users u ON u.user_id = pr.user_id
+  LEFT JOIN work_force wf ON wf.workforce_id = pr.workforce_id
   WHERE pr.report_date BETWEEN ? AND ?
   ORDER BY pr.report_date DESC, pr.report_id DESC
 ");
@@ -58,6 +62,7 @@ include __DIR__ . '/header.php';
               <th class="pb-3 font-medium text-gray-600">Name</th>
               <th class="pb-3 font-medium text-gray-600">Type</th>
               <th class="pb-3 font-medium text-gray-600">Title</th>
+              <th class="pb-3 font-medium text-gray-600">Work Force</th>
               <th class="pb-3 font-medium text-gray-600">Status</th>
               <th class="pb-3 font-medium text-gray-600">Bukti</th>
             </tr>
@@ -76,6 +81,9 @@ include __DIR__ . '/header.php';
               </td>
               <td class="py-4 text-sm text-gray-800">
                 <?php echo htmlspecialchars($r['title']) ?>
+              </td>
+              <td class="py-4 text-sm text-gray-800">
+                <?php echo htmlspecialchars($r['workforce_name']) ?>
               </td>
               <td class="py-4 whitespace-nowrap">
                 <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $r['status']==='Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' ?>">

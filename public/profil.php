@@ -39,10 +39,16 @@ $total_monthly = (int)$monthly_report['total'];
 
 // Ambil aktivitas terbaru hari ini
 $stmt2 = $pdo->prepare("
-    SELECT title, job_type, status, created_at 
-    FROM production_reports 
-    WHERE user_id = ? AND report_date = ?
-    ORDER BY created_at DESC 
+    SELECT 
+        pr.title, 
+        pr.job_type, 
+        pr.status,
+        wf.workforce_name,
+        pr.created_at 
+    FROM production_reports pr
+    JOIN work_force wf ON pr.workforce_id = wf.workforce_id
+    WHERE pr.user_id = ? AND pr.report_date = ?
+    ORDER BY pr.created_at DESC 
     LIMIT 5
 ");
 $stmt2->execute([$user_id, $today]);
@@ -135,6 +141,7 @@ include __DIR__ . '/header.php';
                                             <p class="font-medium text-gray-800 text-sm sm:text-base truncate"><?php echo htmlspecialchars($act['title']); ?></p>
                                             <p class="text-xs text-gray-600">
                                                 <?php echo htmlspecialchars($act['job_type']); ?> • 
+                                                <?php echo htmlspecialchars($act['workforce_name']); ?> • 
                                                 <?php echo date('H:i', strtotime($act['created_at'])); ?>
                                             </p>
                                         </div>

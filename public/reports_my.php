@@ -9,7 +9,14 @@ $start = $month . "-01";
 $end = date('Y-m-t', strtotime($start));
 
 // get list
-$stmt = $pdo->prepare("SELECT * FROM production_reports WHERE user_id = ? AND report_date BETWEEN ? AND ? ORDER BY report_date DESC, report_id DESC");
+$stmt = $pdo->prepare("SELECT 
+        pr.*,
+        wf.workforce_name
+    FROM production_reports pr
+    LEFT JOIN work_force wf ON wf.workforce_id = pr.workforce_id
+    WHERE pr.user_id = ? 
+      AND pr.report_date BETWEEN ? AND ?
+    ORDER BY pr.report_date DESC, pr.report_id DESC");
 $stmt->execute([$user_id, $start, $end]);
 $rows = $stmt->fetchAll();
 
@@ -21,7 +28,11 @@ $daily = $stmt2->fetchAll();
 $total = 0;
 $labels = [];
 $data = [];
-foreach ($daily as $r) { $labels[] = $r['d']; $data[] = (int)$r['c']; $total += (int)$r['c']; }
+foreach ($daily as $r) {
+  $labels[] = $r['d'];
+  $data[] = (int)$r['c'];
+  $total += (int)$r['c'];
+}
 
 include __DIR__ . '/header.php';
 ?>
@@ -41,8 +52,8 @@ include __DIR__ . '/header.php';
           </div>
         </div>
         <form class="flex flex-col sm:flex-row items-center gap-2">
-          <input type="month" name="month" value="<?php echo htmlspecialchars($month) ?>" 
-                 class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+          <input type="month" name="month" value="<?php echo htmlspecialchars($month) ?>"
+            class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
           <button type="submit" class="px-4 py-2 w-full md:w-[69px]  bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
             Filter
           </button>
@@ -65,7 +76,7 @@ include __DIR__ . '/header.php';
   <div class="bg-white rounded-xl shadow-md overflow-hidden">
     <div class="p-6 md:p-8">
       <h2 class="text-xl font-bold text-gray-800 mb-6">Entry Details</h2>
-      
+
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead>
@@ -73,47 +84,51 @@ include __DIR__ . '/header.php';
               <th class="pb-3 font-medium text-gray-600">Date</th>
               <th class="pb-3 font-medium text-gray-600">Type</th>
               <th class="pb-3 font-medium text-gray-600">Title</th>
+              <th class="pb-3 font-medium text-gray-600">Work Force</th>
               <th class="pb-3 font-medium text-gray-600">Status</th>
               <th class="pb-3 font-medium text-gray-600">Bukti</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <?php foreach($rows as $r): ?>
-            <tr class="hover:bg-gray-50 transition">
-              <td class="py-4 whitespace-nowrap text-sm text-gray-600">
-                <?php echo htmlspecialchars($r['report_date']) ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                <?php echo htmlspecialchars($r['job_type']) ?>
-              </td>
-              <td class="py-4 text-sm text-gray-800">
-                <?php echo htmlspecialchars($r['title']) ?>
-              </td>
-              <td class="py-4 whitespace-nowrap">
-                <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $r['status']==='Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' ?>">
-                  <?php echo htmlspecialchars($r['status']) ?>
-                </span>
-              </td>
-             <td class="py-4 whitespace-nowrap">
-              <?php 
-              // Tampilkan link jika ada proof_link
-              if($r['proof_link']): ?>
-                <a href="<?php echo htmlspecialchars($r['proof_link']) ?>" target="_blank" 
-                  class="text-indigo-600 hover:text-indigo-800 text-sm font-medium hover:underline transition">
-                  Lihat
-                </a>
-              <?php 
-              // Tampilkan gambar jika ada proof_image
-              elseif($r['proof_image']): ?>
-                <button onclick="openModal(<?php echo $r['report_id'] ?>)" 
-                        class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm transition">
-                  See Picture
-                </button>
-              <?php else: ?>
-                <span class="text-gray-400 text-sm">-</span>
-              <?php endif; ?>
-            </td>
-            </tr>
+            <?php foreach ($rows as $r): ?>
+              <tr class="hover:bg-gray-50 transition">
+                <td class="py-4 whitespace-nowrap text-sm text-gray-600">
+                  <?php echo htmlspecialchars($r['report_date']) ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                  <?php echo htmlspecialchars($r['job_type']) ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-gray-800">
+                  <?php echo htmlspecialchars($r['title']) ?>
+                </td>
+                <td class="py-4 whitespace-nowrap text-[10px] sm:text-sm font-medium text-gray-800">
+                  <?php echo htmlspecialchars($r['workforce_name'] ?? '-'); ?>
+                </td>
+                <td class="py-4 whitespace-nowrap">
+                  <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $r['status'] === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' ?>">
+                    <?php echo htmlspecialchars($r['status']) ?>
+                  </span>
+                </td>
+                <td class="py-4 whitespace-nowrap">
+                  <?php
+                  // Tampilkan link jika ada proof_link
+                  if ($r['proof_link']): ?>
+                    <a href="<?php echo htmlspecialchars($r['proof_link']) ?>" target="_blank"
+                      class="text-indigo-600 hover:text-indigo-800 text-sm font-medium hover:underline transition">
+                      Lihat
+                    </a>
+                  <?php
+                  // Tampilkan gambar jika ada proof_image
+                  elseif ($r['proof_image']): ?>
+                    <button onclick="openModal(<?php echo $r['report_id'] ?>)"
+                      class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm transition">
+                      See Picture
+                    </button>
+                  <?php else: ?>
+                    <span class="text-gray-400 text-sm">-</span>
+                  <?php endif; ?>
+                </td>
+              </tr>
             <?php endforeach; ?>
           </tbody>
         </table>
@@ -126,29 +141,29 @@ include __DIR__ . '/header.php';
   // Chart.js configuration
   const labels = <?php echo json_encode($labels); ?>;
   const data = <?php echo json_encode($data); ?>;
-  
+
   new Chart(document.getElementById('chart'), {
     type: 'bar',
-    data: { 
-      labels, 
-      datasets: [{ 
-        label: 'Item per Hari', 
+    data: {
+      labels,
+      datasets: [{
+        label: 'Item per Hari',
         data,
         backgroundColor: 'rgba(79, 70, 229, 0.7)',
         borderColor: 'rgba(79, 70, 229, 1)',
         borderWidth: 1
-      }] 
+      }]
     },
-    options: { 
+    options: {
       responsive: true,
       maintainAspectRatio: false,
-      scales: { 
-        y: { 
+      scales: {
+        y: {
           beginAtZero: true,
           ticks: {
             stepSize: 1
           }
-        } 
+        }
       },
       plugins: {
         legend: {
@@ -173,24 +188,24 @@ include __DIR__ . '/header.php';
 </div>
 
 <script>
-function openModal(reportId) {
-  fetch(`get_report_detail_user.php?id=${reportId}`)
-    .then(response => response.text())
-    .then(data => {
-      document.getElementById('modalContent').innerHTML = data;
-      document.getElementById('reportModal').classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      document.getElementById('modalContent').innerHTML = '<p class="text-red-600">Terjadi kesalahan saat memuat data</p>';
-    });
-}
+  function openModal(reportId) {
+    fetch(`get_report_detail_user.php?id=${reportId}`)
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('modalContent').innerHTML = data;
+        document.getElementById('reportModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('modalContent').innerHTML = '<p class="text-red-600">Terjadi kesalahan saat memuat data</p>';
+      });
+  }
 
-function closeModal() {
-  document.getElementById('reportModal').classList.add('hidden');
-  document.body.style.overflow = 'auto';
-}
+  function closeModal() {
+    document.getElementById('reportModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  }
 </script>
 
 <?php include __DIR__ . '/footer.php'; ?>
