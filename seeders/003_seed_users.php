@@ -24,6 +24,9 @@ return [
             ['name' => 'Joshua Matthew Hendra'],
             ['name' => 'Fadhal nurul azmi'],
             ['name' => 'Rasya al zikri'],
+            ['name' => 'Rifki'],
+            ['name' => 'Marsya']
+
         ];
 
         // Password default (bisa diubah sesuai kebutuhan)
