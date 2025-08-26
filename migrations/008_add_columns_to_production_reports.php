@@ -1,5 +1,5 @@
 <?php
-use PDO;
+// use PDO;
 
 return [
     'up' => function (PDO $pdo) {

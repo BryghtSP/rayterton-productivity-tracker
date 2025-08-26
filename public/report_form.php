@@ -27,6 +27,10 @@ $stmt = $pdo->prepare("
 $stmt->execute([$employee_id]);
 $work_forces = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+//colong table job_type
+$stmt = $pdo->query("SELECT job_type_id, name FROM job_type ORDER BY name");
+$job_types = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 include __DIR__ . '/header.php';
 ?>
 
@@ -51,84 +55,83 @@ include __DIR__ . '/header.php';
             <select name="job_type"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
               required>
-              <option value="Program">Program</option>
-              <option value="Website">Website</option>
-              <option value="Mobile Apps">Mobile Apps</option>
-              <option value="Training Materi">Training Materi</option>
-              <option value="Mengajar">Mengajar</option>
-              <option value="QA/Testing">QA/Testing</option>
-              <option value="UI/UX">UI/UX</option>
-              <option value="DevOps">DevOps</option>
-              <option value="Dokumentasi">Dokumentasi</option>
+              <option value="">-- Pilih Job Type --</option>
+              <?php foreach ($job_types as $jt): ?>
+                <option value="<?= $jt['job_type_id'] ?>">
+                  <?= htmlspecialchars($jt['name']) ?>
+                </option>
+              <?php endforeach; ?>
             </select>
+            <?php if (empty($job_types)): ?>
+              <p class="text-red-500 text-sm mt-1">Belum ada job type yang terdaftar.</p>
+            <?php endif; ?>
           </div>
-        </div>
 
-        <!-- Title Input -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Judul/Menu/Layar</label>
-          <input type="text" name="title"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-            required>
-        </div>
-
-        <!-- Work Force Dropdown -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Work Force</label>
-          <select name="workforce_id"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-            required>
-            <option value="">-- Pilih Work Force --</option>
-            <?php foreach ($work_forces as $wf): ?>
-              <option value="<?= $wf['workforce_id'] ?>">
-                <?= htmlspecialchars($wf['workforce_name']) ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-          <?php if (empty($work_forces)): ?>
-            <p class="text-red-500 text-sm mt-1">Anda belum terdaftar di work force manapun.</p>
-          <?php endif; ?>
-        </div>
-
-        <!-- Description Textarea -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <textarea name="description" rows="4"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"></textarea>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Status Select -->
+          <!-- Title Input -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select name="status"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              <option value="Progress">Progress</option>
-              <option value="Selesai">Selesai</option>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Judul/Menu/Layar</label>
+            <input type="text" name="title"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              required>
+          </div>
+
+          <!-- Work Force Dropdown -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Work Force</label>
+            <select name="workforce_id"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              required>
+              <option value="">-- Pilih Work Force --</option>
+              <?php foreach ($work_forces as $wf): ?>
+                <option value="<?= $wf['workforce_id'] ?>">
+                  <?= htmlspecialchars($wf['workforce_name']) ?>
+                </option>
+              <?php endforeach; ?>
             </select>
+            <?php if (empty($work_forces)): ?>
+              <p class="text-red-500 text-sm mt-1">Anda belum terdaftar di work force manapun.</p>
+            <?php endif; ?>
           </div>
 
-          <!-- Proof Link Input -->
+          <!-- Description Textarea -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Bukti (URL repo/screenshot)</label>
-            <input type="url" name="proof_link" placeholder="https://..."
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea name="description" rows="4"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"></textarea>
           </div>
-        </div>
-        <!-- Proof Image Upload -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Bukti (Foto)</label>
-          <input type="file" name="proof_image" accept="image/*"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-          <p class="text-xs text-gray-500 mt-1">Upload gambar (jpg, png, jpeg)</p>
-        </div>
-        <!-- Submit Button -->
-        <div class="pt-4">
-          <button type="submit"
-            class="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
-            Save Report
-          </button>
-        </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Status Select -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select name="status"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                <option value="Progress">Progress</option>
+                <option value="Selesai">Selesai</option>
+              </select>
+            </div>
+
+            <!-- Proof Link Input -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Bukti (URL repo/screenshot)</label>
+              <input type="url" name="proof_link" placeholder="https://..."
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            </div>
+          </div>
+          <!-- Proof Image Upload -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Bukti (Foto)</label>
+            <input type="file" name="proof_image" accept="image/*"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            <p class="text-xs text-gray-500 mt-1">Upload gambar (jpg, png, jpeg)</p>
+          </div>
+          <!-- Submit Button -->
+          <div class="pt-4">
+            <button type="submit"
+              class="w-full md:w-auto px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
+              Save Report
+            </button>
+          </div>
       </form>
 
       <p class="mt-6 text-sm text-gray-500">
