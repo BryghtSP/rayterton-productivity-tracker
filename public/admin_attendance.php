@@ -6,21 +6,43 @@ require_admin();
 $date = $_GET['date'] ?? date('Y-m-d');
 $month = $_GET['month'] ?? date('Y-m');
 
-// Daily attendance
+// === Pagination Daily Attendance ===
+$limitDaily = 10;
+$dailyPage = isset($_GET['daily_page']) ? max(1, (int)$_GET['daily_page']) : 1;
+$dailyOffset = ($dailyPage - 1) * $limitDaily;
+
+// Hitung total data daily
+$countDaily = $pdo->prepare("SELECT COUNT(*) FROM attendance WHERE date = ?");
+$countDaily->execute([$date]);
+$totalDaily = (int)$countDaily->fetchColumn();
+$totalDailyPages = ceil($totalDaily / $limitDaily);
+
+// Ambil data daily
 $stmt = $pdo->prepare("
     SELECT a.*, u.name, u.email 
     FROM attendance a
     JOIN users u ON a.user_id = u.user_id
     WHERE a.date = ?
     ORDER BY a.status, u.name
+    LIMIT $limitDaily OFFSET $dailyOffset
 ");
 $stmt->execute([$date]);
 $daily = $stmt->fetchAll();
 
-// Monthly summary
+// === Pagination Monthly Recap ===
 $start = $month . "-01";
 $end = date('Y-m-t', strtotime($start));
 
+$limitMonthly = 10;
+$monthlyPage = isset($_GET['monthly_page']) ? max(1, (int)$_GET['monthly_page']) : 1;
+$monthlyOffset = ($monthlyPage - 1) * $limitMonthly;
+
+// Hitung total monthly
+$countMonthly = $pdo->query("SELECT COUNT(*) FROM users WHERE is_active = 1");
+$totalMonthly = (int)$countMonthly->fetchColumn();
+$totalMonthlyPages = ceil($totalMonthly / $limitMonthly);
+
+// Ambil data monthly recap
 $stmt = $pdo->prepare("
     SELECT u.user_id, u.name, 
            SUM(CASE 
@@ -43,8 +65,8 @@ $stmt = $pdo->prepare("
     WHERE u.is_active = 1
     GROUP BY u.user_id
     ORDER BY u.name
+    LIMIT $limitMonthly OFFSET $monthlyOffset
 ");
-
 $stmt->execute([$start, $end]);
 $monthly = $stmt->fetchAll();
 
@@ -83,31 +105,21 @@ include __DIR__ . '/header.php';
           <tbody class="divide-y divide-gray-100">
             <?php foreach ($daily as $record): ?>
               <tr class="hover:bg-gray-50 transition">
-                <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                  <?= htmlspecialchars($record['name']) ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-gray-600">
-                  <?= htmlspecialchars($record['email']) ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-gray-600">
-                  <?= htmlspecialchars($record['shift']) ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm">
-                  <?= $record['check_in'] ?? '-' ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm">
-                  <?= $record['check_out'] ?? '-' ?>
-                </td>
+                <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
+                <td class="py-4 whitespace-nowrap text-sm text-gray-600"><?= htmlspecialchars($record['email']) ?></td>
+                <td class="py-4 whitespace-nowrap text-sm text-gray-600"><?= htmlspecialchars($record['shift']) ?></td>
+                <td class="py-4 whitespace-nowrap text-sm"><?= $record['check_in'] ?? '-' ?></td>
+                <td class="py-4 whitespace-nowrap text-sm"><?= $record['check_out'] ?? '-' ?></td>
                 <td class="py-4 whitespace-nowrap">
                   <span class="px-2.5 py-1 rounded-full text-xs font-medium 
                   <?php 
                     if ($record['status'] === 'Hadir') {
                         if ($record['check_in'] <= '07:45:00') {
-                            echo 'bg-green-100 text-green-800'; // Pagi
+                            echo 'bg-green-100 text-green-800';
                         } elseif ($record['check_in'] <= '13:10:00') {
-                            echo 'bg-blue-100 text-blue-800'; // Siang
+                            echo 'bg-blue-100 text-blue-800';
                         } else {
-                            echo 'bg-orange-100 text-orange-800'; // Invalid
+                            echo 'bg-orange-100 text-orange-800';
                         }
                     } elseif ($record['status'] === 'Telat') {
                         echo 'bg-yellow-100 text-yellow-800';
@@ -120,22 +132,27 @@ include __DIR__ . '/header.php';
                     }
                   ?>">
                     <?= htmlspecialchars($record['status']) ?>
-                    <?php if ($record['status'] === 'Hadir'): ?>
-                      (<?= $record['check_in'] <= '07:45:00' ? 'Pagi' : ($record['check_in'] <= '13:10:00' ? 'Siang' : 'Invalid') ?>)
-                    <?php endif; ?>
                   </span>
                 </td>
-                <td class="py-4 whitespace-nowrap text-sm text-gray-700">
-                  <?= htmlspecialchars($record['location'] ?? '-') ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-gray-700">
-                  <?= !empty($record['notes']) ? htmlspecialchars($record['notes']) : '-' ?>
-                </td>
+                <td class="py-4 whitespace-nowrap text-sm text-gray-700"><?= htmlspecialchars($record['location'] ?? '-') ?></td>
+                <td class="py-4 whitespace-nowrap text-sm text-gray-700"><?= !empty($record['notes']) ? htmlspecialchars($record['notes']) : '-' ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Daily -->
+      <?php if ($totalDailyPages > 1): ?>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <?php for ($i=1; $i <= $totalDailyPages; $i++): ?>
+            <a href="?date=<?= urlencode($date) ?>&daily_page=<?= $i ?>&monthly_page=<?= $monthlyPage ?>&month=<?= urlencode($month) ?>"
+               class="px-3 py-1 rounded <?= $i==$dailyPage ? 'bg-indigo-600 text-white':'bg-gray-200 text-gray-700' ?>">
+               <?= $i ?>
+            </a>
+          <?php endfor; ?>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -169,32 +186,30 @@ include __DIR__ . '/header.php';
           <tbody class="divide-y divide-gray-100">
             <?php foreach ($monthly as $record): ?>
               <tr class="hover:bg-gray-50 transition">
-                <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                  <?= htmlspecialchars($record['name']) ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-green-600">
-                  <?= $record['hadir_shift_pagi'] ?? 0 ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600">
-                  <?= $record['hadir_shift_siang'] ?? 0 ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-orange-600">
-                  <?= $record['hadir_invalid'] ?? 0 ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-yellow-600">
-                  <?= $record['telat'] ?? 0 ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-indigo-600">
-                  <?= $record['izin'] ?? 0 ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-purple-600">
-                  <?= $record['sakit'] ?? 0 ?>
-                </td>
+                <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-green-600"><?= $record['hadir_shift_pagi'] ?? 0 ?></td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600"><?= $record['hadir_shift_siang'] ?? 0 ?></td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-orange-600"><?= $record['hadir_invalid'] ?? 0 ?></td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-yellow-600"><?= $record['telat'] ?? 0 ?></td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-indigo-600"><?= $record['izin'] ?? 0 ?></td>
+                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-purple-600"><?= $record['sakit'] ?? 0 ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination Monthly -->
+      <?php if ($totalMonthlyPages > 1): ?>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <?php for ($i=1; $i <= $totalMonthlyPages; $i++): ?>
+            <a href="?month=<?= urlencode($month) ?>&monthly_page=<?= $i ?>&date=<?= urlencode($date) ?>&daily_page=<?= $dailyPage ?>"
+               class="px-3 py-1 rounded <?= $i==$monthlyPage ? 'bg-indigo-600 text-white':'bg-gray-200 text-gray-700' ?>">
+               <?= $i ?>
+            </a>
+          <?php endfor; ?>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 </div>

@@ -7,31 +7,69 @@ $month = $_GET['month'] ?? date('Y-m');
 $start = $month . "-01";
 $end = date('Y-m-t', strtotime($start));
 
-// all reports
+// === Pagination utk All Reports ===
+$limit = 5;
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $limit;
+
+// total data reports
+$countStmt = $pdo->prepare("
+  SELECT COUNT(*) 
+  FROM production_reports pr
+  JOIN users u ON u.user_id = pr.user_id
+  LEFT JOIN work_force wf ON wf.workforce_id = pr.workforce_id
+  WHERE pr.report_date BETWEEN ? AND ?
+");
+$countStmt->execute([$start, $end]);
+$totalReports = (int)$countStmt->fetchColumn();
+$totalPages = ceil($totalReports / $limit);
+
+// ambil data reports sesuai halaman
 $stmt = $pdo->prepare("
-  SELECT 
-    pr.*, 
-    u.name,
-    wf.workforce_name
+  SELECT pr.*, u.name, wf.workforce_name
   FROM production_reports pr
   JOIN users u ON u.user_id = pr.user_id
   LEFT JOIN work_force wf ON wf.workforce_id = pr.workforce_id
   WHERE pr.report_date BETWEEN ? AND ?
   ORDER BY pr.report_date DESC, pr.report_id DESC
+  LIMIT $limit OFFSET $offset
 ");
 $stmt->execute([$start, $end]);
 $rows = $stmt->fetchAll();
 
-// daily shortfall: users with <2 entries today
+// === Pagination utk Shortfall ===
 $today = date('Y-m-d');
+$shortLimit = 5;
+$shortPage = isset($_GET['short_page']) ? max(1, (int)$_GET['short_page']) : 1;
+$shortOffset = ($shortPage - 1) * $shortLimit;
+
+// total shortfall
+$countShort = $pdo->prepare("
+  SELECT COUNT(*) FROM (
+    SELECT u.user_id
+    FROM users u
+    LEFT JOIN production_reports pr 
+      ON pr.user_id = u.user_id AND pr.report_date = ?
+    WHERE u.is_active = 1
+    GROUP BY u.user_id
+    HAVING COUNT(pr.report_id) < 2
+  ) as t
+");
+$countShort->execute([$today]);
+$totalShort = (int)$countShort->fetchColumn();
+$totalShortPages = ceil($totalShort / $shortLimit);
+
+// ambil data shortfall sesuai halaman
 $short = $pdo->prepare("
   SELECT u.user_id, u.name, u.email, COUNT(pr.report_id) as c
   FROM users u
-  LEFT JOIN production_reports pr ON pr.user_id = u.user_id AND pr.report_date = ?
+  LEFT JOIN production_reports pr 
+    ON pr.user_id = u.user_id AND pr.report_date = ?
   WHERE u.is_active = 1
   GROUP BY u.user_id
   HAVING c < 2
   ORDER BY u.name
+  LIMIT $shortLimit OFFSET $shortOffset
 ");
 $short->execute([$today]);
 $shortRows = $short->fetchAll();
@@ -105,13 +143,27 @@ include __DIR__ . '/header.php';
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination All Reports -->
+      <?php if($totalPages > 1): ?>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <?php for($i=1; $i <= $totalPages; $i++): ?>
+            <a href="?month=<?php echo urlencode($month) ?>&page=<?php echo $i ?>&short_page=<?php echo $shortPage ?>" 
+               class="px-3 py-1 rounded <?php echo $i==$page?'bg-indigo-600 text-white':'bg-gray-200 text-gray-700' ?>">
+               <?php echo $i ?>
+            </a>
+          <?php endfor; ?>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 
   <!-- Shortfall Card -->
   <div class="bg-white rounded-xl shadow-md overflow-hidden">
     <div class="p-6 md:p-8">
-      <h2 class="text-base sm:text-xl font-bold text-gray-800 mb-6">Employees Less Than 2 Entries Today (<?php echo htmlspecialchars($today) ?>)</h2>
+      <h2 class="text-base sm:text-xl font-bold text-gray-800 mb-6">
+        Employees Less Than 2 Entries Today (<?php echo htmlspecialchars($today) ?>)
+      </h2>
       
       <?php if(!$shortRows): ?>
         <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
@@ -144,6 +196,18 @@ include __DIR__ . '/header.php';
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination Shortfall -->
+        <?php if($totalShortPages > 1): ?>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <?php for($i=1; $i <= $totalShortPages; $i++): ?>
+              <a href="?month=<?php echo urlencode($month) ?>&page=<?php echo $page ?>&short_page=<?php echo $i ?>" 
+                 class="px-3 py-1 rounded <?php echo $i==$shortPage?'bg-indigo-600 text-white':'bg-gray-200 text-gray-700' ?>">
+                 <?php echo $i ?>
+              </a>
+            <?php endfor; ?>
+          </div>
+        <?php endif; ?>
       <?php endif; ?>
     </div>
   </div>
@@ -173,7 +237,6 @@ function openModal(reportId) {
       document.body.style.overflow = 'hidden'; // Prevent scrolling
     });
 }
-
 function closeModal() {
   document.getElementById('reportModal').classList.add('hidden');
   document.body.style.overflow = 'auto';
