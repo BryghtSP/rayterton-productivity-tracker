@@ -21,7 +21,10 @@ $stmt->execute([$user_id, $start, $end]);
 $rows = $stmt->fetchAll();
 
 // counts
-$stmt2 = $pdo->prepare("SELECT DATE(report_date) d, COUNT(*) c FROM production_reports WHERE user_id = ? AND report_date BETWEEN ? AND ? GROUP BY DATE(report_date)");
+$stmt2 = $pdo->prepare("SELECT DATE(report_date) d, COUNT(*) c 
+                        FROM production_reports 
+                        WHERE user_id = ? AND report_date BETWEEN ? AND ? 
+                        GROUP BY DATE(report_date)");
 $stmt2->execute([$user_id, $start, $end]);
 $daily = $stmt2->fetchAll();
 
@@ -54,7 +57,7 @@ include __DIR__ . '/header.php';
         <form class="flex flex-col sm:flex-row items-center gap-2">
           <input type="month" name="month" value="<?php echo htmlspecialchars($month) ?>"
             class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-          <button type="submit" class="px-4 py-2 w-full md:w-[69px]  bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+          <button type="submit" class="px-4 py-2 w-full md:w-[69px] bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
             Filter
           </button>
         </form>
@@ -92,7 +95,7 @@ include __DIR__ . '/header.php';
           </thead>
           <tbody class="divide-y divide-gray-100">
             <?php foreach ($rows as $r): ?>
-              <tr class="hover:bg-gray-50 transition">
+              <tr class="hover:bg-gray-50 transition" id="row-<?php echo $r['report_id']; ?>">
                 <td class="py-4 whitespace-nowrap text-sm text-gray-600">
                   <?php echo htmlspecialchars($r['report_date']) ?>
                 </td>
@@ -105,7 +108,6 @@ include __DIR__ . '/header.php';
                 <td class="py-4 whitespace-nowrap text-[10px] sm:text-sm font-medium text-gray-800">
                   <?php echo htmlspecialchars($r['workforce_name'] ?? '-'); ?>
                 </td>
-                <!-- Kolom Status -->
                 <td class="py-4 whitespace-nowrap">
                   <span
                     class="status-badge px-2.5 py-1 rounded-full text-xs font-medium 
@@ -130,11 +132,11 @@ include __DIR__ . '/header.php';
                     <span class="text-gray-400 text-sm">-</span>
                   <?php endif; ?>
                 </td>
-                <!-- Kolom Aksi -->
+
                 <td class="py-4 whitespace-nowrap space-x-1">
                   <?php if ($r['status'] === 'Progress'): ?>
                     <button
-                      onclick="markAsDone(<?php echo $r['report_id']; ?>)"
+                      onclick="markAsDone(<?php echo $r['report_id']; ?>, this)"
                       class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">
                       Tandai Selesai
                     </button>
@@ -142,15 +144,15 @@ include __DIR__ . '/header.php';
                     <span class="text-gray-400 text-sm">Selesai</span>
                   <?php endif; ?>
 
-                  <!-- Tombol Hapus -->
                   <button
-                    onclick="deleteReport(<?php echo $r['report_id']; ?>)"
+                    onclick="deleteReport(<?php echo $r['report_id']; ?>, this)"
                     class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
                     title="Hapus laporan">
                     Hapus
-                    </butt
-                      </tr>
-                  <?php endforeach; ?>
+                  </button>
+                </td>
+              </tr>
+            <?php endforeach; ?>
           </tbody>
         </table>
       </div>
@@ -158,11 +160,11 @@ include __DIR__ . '/header.php';
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-  // Chart.js configuration
+  // Chart.js
   const labels = <?php echo json_encode($labels); ?>;
   const data = <?php echo json_encode($data); ?>;
-
   new Chart(document.getElementById('chart'), {
     type: 'bar',
     data: {
@@ -178,109 +180,110 @@ include __DIR__ . '/header.php';
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            stepSize: 1
-          }
-        }
-      },
-      plugins: {
-        legend: {
-          display: false
-        }
-      }
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+      plugins: { legend: { display: false } }
     }
   });
 
-  // Fungsi: Tandai laporan sebagai Selesai
-  function markAsDone(reportId) {
-    if (!confirm('Yakin ingin tandai sebagai Selesai?')) return;
+  // Tandai selesai
+  function markAsDone(reportId, btn) {
+    Swal.fire({
+      title: 'Yakin?',
+      text: "Ingin menandai laporan ini sebagai selesai?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, tandai!',
+      cancelButtonText: 'Batal'
+    }).then((res) => {
+      if (res.isConfirmed) {
+        const originalText = btn.textContent;
+        btn.textContent = 'Processing...';
+        btn.disabled = true;
 
-    // Tampilkan loading
-    const button = event.target;
-    const originalText = button.textContent;
-    button.textContent = 'Processing...';
-    button.disabled = true;
-
-    fetch('update_status_ajax.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'report_id=' + reportId + '&action=mark_done'
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Ubah badge menjadi "Selesai"
-          const statusEl = document.getElementById('status-' + reportId);
-          statusEl.textContent = 'Selesai';
-          statusEl.className = 'status-badge px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
-
-          // Hapus tombol atau ganti jadi "Done"
-          button.textContent = 'Selesai';
-          button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-          button.classList.add('bg-gray-400', 'text-gray-700', 'cursor-not-allowed');
-          button.disabled = true;
-
-          // Opsional: tampilkan notifikasi
-          alert('Status berhasil diperbarui!');
-        } else {
-          alert('Gagal: ' + data.message);
-          button.textContent = originalText;
-          button.disabled = false;
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan koneksi.');
-        button.textContent = originalText;
-        button.disabled = false;
-      });
+        fetch('update_status_ajax.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: 'report_id=' + reportId + '&action=mark_done'
+          })
+          .then(r => r.json())
+          .then(d => {
+            if (d.success) {
+              const statusEl = document.getElementById('status-' + reportId);
+              statusEl.textContent = 'Selesai';
+              statusEl.className = 'status-badge px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
+              btn.textContent = 'Selesai';
+              btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+              btn.classList.add('bg-gray-400', 'text-gray-700', 'cursor-not-allowed');
+              Swal.fire('Berhasil!', 'Status laporan diperbarui.', 'success');
+            } else {
+              Swal.fire('Gagal!', d.message, 'error');
+              btn.textContent = originalText;
+              btn.disabled = false;
+            }
+          })
+          .catch(e => {
+            console.error(e);
+            Swal.fire('Error', 'Terjadi kesalahan koneksi.', 'error');
+            btn.textContent = originalText;
+            btn.disabled = false;
+          });
+      }
+    });
   }
 
-  // Fungsi: Hapus laporan
-  function deleteReport(reportId) {
-    if (!confirm('Anda yakin ingin menghapus laporan ini? Tindakan tidak bisa dibatalkan.')) {
-      return;
-    }
+  // Hapus laporan
+  function deleteReport(reportId, btn) {
+    Swal.fire({
+      title: 'Yakin hapus?',
+      text: "Laporan ini akan dihapus permanen!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((res) => {
+      if (res.isConfirmed) {
+        const row = document.getElementById('row-' + reportId);
+        const originalText = btn.textContent;
+        btn.textContent = 'Menghapus...';
+        btn.disabled = true;
 
-    const row = event.target.closest('tr'); // Ambil baris tabel
-    const originalText = event.target.textContent;
-    event.target.textContent = 'Menghapus...';
-    event.target.disabled = true;
-
-    fetch('/delete_report_ajax.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'report_id=' + reportId + '&user_id=' + <?php echo $user_id; ?>
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Hapus baris dari tabel
-          row.classList.add('bg-red-50', 'animate-pulse');
-          setTimeout(() => {
-            row.remove();
-            alert('Laporan berhasil dihapus.');
-            location.reload(); // Opsional: reload untuk update chart
-          }, 300);
-        } else {
-          alert('Gagal menghapus: ' + data.message);
-          event.target.textContent = originalText;
-          event.target.disabled = false;
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan koneksi.');
-        event.target.textContent = originalText;
-        event.target.disabled = false;
-      });
+        fetch('delete_report_ajax.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: 'report_id=' + reportId
+          })
+          .then(r => r.json())
+          .then(d => {
+            if (d.success) {
+              row.classList.add('bg-red-50', 'animate-pulse');
+              setTimeout(() => {
+                row.remove();
+                Swal.fire('Dihapus!', 'Laporan berhasil dihapus.', 'success');
+              }, 300);
+            } else {
+              Swal.fire('Gagal!', d.message, 'error');
+              btn.textContent = originalText;
+              btn.disabled = false;
+            }
+          })
+          .catch(e => {
+            console.error(e);
+            Swal.fire('Error', 'Terjadi kesalahan koneksi.', 'error');
+            btn.textContent = originalText;
+            btn.disabled = false;
+          });
+      }
+    });
   }
 </script>
 
@@ -299,19 +302,18 @@ include __DIR__ . '/header.php';
 
 <script>
   function openModal(reportId) {
-    fetch(`get_report_detail_user.php?id=${reportId}`)
-      .then(response => response.text())
-      .then(data => {
-        document.getElementById('modalContent').innerHTML = data;
+    fetch(`get_report_detail_user.php?id=${reportId}`, { credentials: 'same-origin' })
+      .then(r => r.text())
+      .then(d => {
+        document.getElementById('modalContent').innerHTML = d;
         document.getElementById('reportModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
       })
-      .catch(error => {
-        console.error('Error:', error);
+      .catch(err => {
+        console.error(err);
         document.getElementById('modalContent').innerHTML = '<p class="text-red-600">Terjadi kesalahan saat memuat data</p>';
       });
   }
-
   function closeModal() {
     document.getElementById('reportModal').classList.add('hidden');
     document.body.style.overflow = 'auto';
