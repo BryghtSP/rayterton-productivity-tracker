@@ -6,6 +6,18 @@ require_login();
 $user_id = $_SESSION['user']['user_id'];
 $today = date('Y-m-d');
 
+// Ambil posisi karyawan sekali di awal
+$stmt = $pdo->prepare("SELECT position FROM employees WHERE user_id = ?");
+$stmt->execute([$user_id]);
+$employee = $stmt->fetch();
+
+// Tentukan apakah user adalah Internship
+$isIntern = false;
+if ($employee) {
+  $position = strtolower(trim($employee['position']));
+  $isIntern = in_array($position, ['internship', 'intern', 'magang']);
+}
+
 // Handle check-in/out/izin
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (isset($_POST['submitCheckIn'])) {
@@ -15,10 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validasi shift berdasarkan waktu
     if ($shift === 'Pagi' && $current_time >= '12:00:00') {
-      // Tidak boleh pilih "Pagi" jika sudah lewat 12:00
       $shift = 'Siang'; // Auto-correct
     } elseif ($shift === 'Siang' && $current_time < '12:00:00') {
-      // Tidak boleh pilih "Siang" jika belum 12:00
       $shift = 'Pagi'; // Auto-correct
     }
 
@@ -27,18 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $shift = $current_time < '12:00:00' ? 'Pagi' : 'Siang';
     }
 
-    // Ambil posisi karyawan
-    $stmt = $pdo->prepare("SELECT position FROM employees WHERE user_id = ?");
-    $stmt->execute([$user_id]);
-    $employee = $stmt->fetch();
-
-    $isIntern = false;
-    if ($employee) {
-      $position = strtolower($employee['position']);
-      $isIntern = ($position === 'internship' || $position === 'intern');
-    }
-
-    // Default status
+    // Tentukan status
     $status = 'Hadir';
 
     if ($isIntern) {
@@ -62,23 +61,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                               location = VALUES(location),
                               shift = VALUES(shift)");
     $stmt->execute([$user_id, $today, $current_time, $status, $location, $shift]);
+
+    header("Location: attendance.php");
+    exit;
   } elseif (isset($_POST['check_out'])) {
-    // Handle check-out
     $stmt = $pdo->prepare("UPDATE attendance SET check_out = ? 
                               WHERE user_id = ? AND date = ?");
     $stmt->execute([date('H:i:s'), $user_id, $today]);
+
+    header("Location: attendance.php");
+    exit;
   } elseif (isset($_POST['submitIzin'])) {
-    // Handle izin
     $notes = trim($_POST['notes']);
     $stmt = $pdo->prepare("INSERT INTO attendance (user_id, date, status, notes) 
                               VALUES (?, ?, 'Izin', ?)
                               ON DUPLICATE KEY UPDATE status='Izin', notes=VALUES(notes)");
     $stmt->execute([$user_id, $today, $notes]);
-  }
 
-  // Redirect setelah proses selesai
-  header("Location: attendance.php");
-  exit;
+    header("Location: attendance.php");
+    exit;
+  }
 }
 
 // Get today's attendance
@@ -105,7 +107,16 @@ include __DIR__ . '/header.php';
   <!-- Today's Attendance Card -->
   <div class="bg-white rounded-xl shadow-md overflow-hidden">
     <div class="p-6 md:p-8">
-      <h1 class="text-2xl font-bold text-gray-800 mb-6">Absent Today (<?= date('d F Y') ?>)</h1>
+      <div class="flex justify-between">        
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Absent Today (<?= date('d F Y') ?>)</h1>
+        <!-- Tampilkan tipe karyawan -->
+        <div class="mb-4 text-center">
+          <span class="inline-block px-4 py-2 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">
+            Anda:
+            <strong><?= $isIntern ? 'Internship' : 'Full-time Employee' ?></strong>
+          </span>
+        </div>
+      </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <!-- Tombol Check-in (buka modal) -->
@@ -146,17 +157,18 @@ include __DIR__ . '/header.php';
         </button>
       </div>
 
-      <!-- Modal Check-in dengan Input Lokasi dan Shift -->
+      <!-- Modal Check-in -->
       <div id="modalCheckIn" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
           <h2 class="text-lg font-bold mb-4">Konfirmasi Check-in</h2>
           <form method="post">
-            <!-- informasi shift -->
+            <!-- Info Shift -->
             <p class="text-sm text-gray-600 mb-3">
-              <strong>Shift Pagi:</strong> 00:00 - 12:00 |
-              <strong>Shift Siang:</strong> 12:00 - 17:30 
+              <strong>Shift Pagi:</strong> 00:00 - 11:59 |
+              <strong>Shift Siang:</strong> 12:00 - 23:59
             </p>
 
+            <!-- Shift -->
             <div class="mb-4">
               <label class="block text-sm font-medium mb-1">Shift</label>
               <select name="shift" required class="w-full border rounded-lg p-2">
@@ -165,6 +177,8 @@ include __DIR__ . '/header.php';
                 <option value="Siang">Siang</option>
               </select>
             </div>
+
+            <!-- Lokasi -->
             <div class="mb-4">
               <label class="block text-sm font-medium mb-1">Lokasi</label>
               <input type="text"
@@ -173,6 +187,7 @@ include __DIR__ . '/header.php';
                 class="w-full border rounded-lg p-2"
                 required>
             </div>
+
             <div class="flex justify-end gap-2">
               <button type="button" id="closeModalCheckIn" class="px-4 py-2 bg-gray-300 rounded-lg">Batal</button>
               <button type="submit" name="submitCheckIn" class="px-4 py-2 bg-green-600 text-white rounded-lg">Submit</button>
@@ -270,7 +285,7 @@ include __DIR__ . '/header.php';
                 </td>
                 <td class="py-4 whitespace-nowrap">
                   <span class="px-2.5 py-1 rounded-full text-xs font-medium 
-                  <?= $record['status'] === 'Hadir' ? 'bg-green-100 text-green-800' : ($record['status'] === 'Telat' ? 'bg-yellow-100 text-yellow-800' : ($record['status'] === 'Izin' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800')) ?>">
+                    <?= $record['status'] === 'Hadir' ? 'bg-green-100 text-green-800' : ($record['status'] === 'Telat' ? 'bg-yellow-100 text-yellow-800' : ($record['status'] === 'Izin' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800')) ?>">
                     <?= htmlspecialchars($record['status']) ?>
                   </span>
                 </td>
