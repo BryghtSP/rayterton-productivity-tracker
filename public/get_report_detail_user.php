@@ -26,7 +26,7 @@ if (!$row) {
 
 echo '<div class="space-y-4">';
 echo '<p><strong>Tanggal:</strong> ' . htmlspecialchars($row['report_date']) . '</p>';
-echo '<p><strong>Nama:</strong> ' . htmlspecialchars($row['name']) . '</p>';
+echo '<p><strong>Nama:</strong> ' . htmlspecialchars($row['user_name']) . '</p>';
 echo '<p><strong>Jenis Pekerjaan:</strong> ' . htmlspecialchars($row['job_type']) . '</p>';
 echo '<p><strong>Judul:</strong> ' . htmlspecialchars($row['title']) . '</p>';
 echo '<p><strong>Work Force:</strong> ' . htmlspecialchars($row['workforce_name']) . '</p>';
