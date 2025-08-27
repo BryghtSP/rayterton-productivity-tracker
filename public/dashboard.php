@@ -26,145 +26,157 @@ $types = $pdo->prepare("SELECT job_type, COUNT(*) c FROM production_reports WHER
 $types->execute([$start, $end]);
 $typeRows = $types->fetchAll();
 
-
+// Pagination
+$limit = 5; 
+$page  = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
+$totalData = count($users);
+$totalPage = ceil($totalData / $limit);
+$usersPage = array_slice($users, $offset, $limit);
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Production Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .progress-bar {
-            height: 8px;
-            border-radius: 4px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.4s ease;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+      .progress-bar { height: 8px; border-radius: 4px; }
+      .progress-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  </style>
 </head>
-
 <body class="bg-gray-50">
+<?php include __DIR__ . '/header.php'; ?>
 
-    <?php include __DIR__ . '/header.php';
-    ?>
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <header class="mb-8">
-            <h1 class="text-xl sm:text-2xl md:text-3xl sm:text-start text-center font-bold text-gray-800">Production Dashboard</h1>
-            <div class="flex sm:flex-row flex-col items-center justify-between md:mt-4 mt-0 gap-2 md:gap-0">
-                <span class="md:text-xl text-lg font-semibold text-indigo-600"><?php echo htmlspecialchars($month) ?></span>
-                <form class="flex gap-2">
-                    <input type="month" name="month" value="<?php echo htmlspecialchars($month) ?>"
-                        class="md:w-full w-[178px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                        Filter
-                    </button>
-                </form>
-            </div>
-        </header>
+<div class="container mx-auto px-4 py-8">
+  <!-- Header -->
+  <header class="mb-8">
+    <h1 class="text-xl sm:text-2xl md:text-3xl sm:text-start text-center font-bold text-gray-800">
+      Production Dashboard
+    </h1>
+    <div class="flex sm:flex-row flex-col items-center justify-between md:mt-4 mt-0 gap-2 md:gap-0">
+      <span class="md:text-xl text-lg font-semibold text-indigo-600"><?php echo htmlspecialchars($month) ?></span>
+      <form class="flex gap-2">
+        <input type="month" name="month" value="<?php echo htmlspecialchars($month) ?>"
+          class="md:w-full w-[178px] px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+          Filter
+        </button>
+      </form>
+    </div>
+  </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- User Performance Card -->
-            <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="p-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Employee Performance</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="text-left border-b border-gray-200">
-                                    <th class="pb-3 font-medium text-gray-600">Name</th>
-                                    <th class="pb-3 font-medium text-gray-600">Total</th>
-                                    <th class="pb-3 font-medium text-gray-600">Progress</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                <?php foreach ($users as $u):
-                                    $pct = $u['total'] >= 88 ? 100 : round(($u['total'] / 88) * 100);
-                                    $colorClass = $u['total'] >= 50 ? 'bg-green-500' : ($u['total'] >= 30 ? 'bg-yellow-500' : 'bg-red-500');
-                                ?>
-                                    <tr class="hover:bg-gray-50 transition">
-                                        <td class="py-4">
-                                            <div class="flex items-center">
-                                                <span class="font-medium text-gray-800"><?php echo htmlspecialchars($u['name']) ?></span>
-                                                <?php if ($u['role'] === 'admin'): ?>
-                                                    <span class="ml-2 px-2 py-1 text-xs bg-indigo-100 text-indigo-800 rounded-full">Admin</span>
-                                                <?php endif; ?>
-                                            </div>
-                                        </td>
-                                        <td class="py-4 font-medium"><?php echo (int)$u['total'] ?></td>
-                                        <td class="py-4">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                                    <div class="h-2.5 rounded-full <?php echo $colorClass ?>"
-                                                        style="width: <?php echo $pct ?>%"></div>
-                                                </div>
-                                                <span class="text-sm font-medium text-gray-600"><?php echo $pct ?>%</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+  <!-- GRID: Employee Performance & Job Distribution -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Employee Performance -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Employee Performance</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left border-b border-gray-200">
+                <th class="pb-3 font-medium text-gray-600">Name</th>
+                <th class="pb-3 font-medium text-gray-600">Total</th>
+                <th class="pb-3 font-medium text-gray-600">Progress</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <?php foreach ($usersPage as $u):
+                $pct = $u['total'] >= 88 ? 100 : round(($u['total'] / 88) * 100);
+                $colorClass = $u['total'] >= 50 ? 'bg-green-500' : ($u['total'] >= 30 ? 'bg-yellow-500' : 'bg-red-500');
+              ?>
+              <tr class="hover:bg-gray-50 transition">
+                <td class="py-4">
+                  <div class="flex items-center">
+                    <span class="font-medium text-gray-800"><?php echo htmlspecialchars($u['name']) ?></span>
+                    <?php if ($u['role'] === 'admin'): ?>
+                      <span class="ml-2 px-2 py-1 text-xs bg-indigo-100 text-indigo-800 rounded-full">Admin</span>
+                    <?php endif; ?>
+                  </div>
+                </td>
+                <td class="py-4 font-medium"><?php echo (int)$u['total'] ?></td>
+                <td class="py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                      <div class="h-2.5 rounded-full <?php echo $colorClass ?>" style="width: <?php echo $pct ?>%"></div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Job Distribution Card -->
-            <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                <div class="p-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Job Type Distribution</h2>
-                    <div class="h-64">
-                        <canvas id="pie"></canvas>
-                    </div>
-                    <p class="mt-4 text-sm text-gray-500">Rule: Minimum 2 items per day per staff.</p>
-                </div>
-            </div>
+                    <span class="text-sm font-medium text-gray-600"><?php echo $pct ?>%</span>
+                  </div>
+                </td>
+              </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
         </div>
+
+        <!-- Pagination -->
+        <div class="flex justify-center mt-4 space-x-2">
+          <?php for ($i = 1; $i <= $totalPage; $i++): ?>
+            <?php if ($i == $page): ?>
+              <span class="px-3 py-1 rounded bg-indigo-600 text-white"><?php echo $i ?></span>
+            <?php else: ?>
+              <a href="?page=<?php echo $i ?>&month=<?php echo htmlspecialchars($month) ?>"
+                 class="px-3 py-1 rounded bg-gray-200 hover:bg-indigo-500 hover:text-white transition">
+                <?php echo $i ?>
+              </a>
+            <?php endif; ?>
+          <?php endfor; ?>
+        </div>
+      </div>
     </div>
 
-    <script>
-        // Pie Chart
-        const pieLabels = <?php echo json_encode(array_column($typeRows, 'job_type')); ?>;
-        const pieData = <?php echo json_encode(array_map('intval', array_column($typeRows, 'c'))); ?>;
+    <!-- Job Distribution -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Job Type Distribution</h2>
+        <div class="h-64">
+          <canvas id="pie"></canvas>
+        </div>
+        <p class="mt-4 text-sm text-gray-500">Rule: Minimum 2 items per day per staff.</p>
+      </div>
+    </div>
 
-        const pieColors = [
-            'rgba(99, 102, 241, 0.7)',
-            'rgba(59, 130, 246, 0.7)',
-            'rgba(16, 185, 129, 0.7)',
-            'rgba(245, 158, 11, 0.7)',
-            'rgba(244, 63, 94, 0.7)'
-        ];
+  </div> <!-- end grid -->
 
-        new Chart(document.getElementById('pie'), {
-            type: 'pie',
-            data: {
-                labels: pieLabels,
-                datasets: [{
-                    data: pieData,
-                    backgroundColor: pieColors,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                    }
-                }
-            }
-        });
-    </script>
-</body>
+</div> <!-- end container -->
 
-</html>
+<script>
+  // Pie Chart
+  const pieLabels = <?php echo json_encode(array_column($typeRows, 'job_type')); ?>;
+  const pieData = <?php echo json_encode(array_map('intval', array_column($typeRows, 'c'))); ?>;
+
+  const pieColors = [
+    'rgba(99, 102, 241, 0.7)',
+    'rgba(59, 130, 246, 0.7)',
+    'rgba(16, 185, 129, 0.7)',
+    'rgba(245, 158, 11, 0.7)',
+    'rgba(244, 63, 94, 0.7)'
+  ];
+
+  new Chart(document.getElementById('pie'), {
+    type: 'pie',
+    data: {
+      labels: pieLabels,
+      datasets: [{
+        data: pieData,
+        backgroundColor: pieColors,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' }
+      }
+    }
+  });
+</script>
+
 <?php include __DIR__ . '/footer.php'; ?>
+</body>
+</html>
