@@ -23,13 +23,21 @@ $end = date('Y-m-t', strtotime($start));
 
 $stmt = $pdo->prepare("
     SELECT u.user_id, u.name, 
-           SUM(CASE WHEN TIME(a.check_in) <= '07:30:00' THEN 1 ELSE 0 END) as hadir_shift_pagi,
-           SUM(CASE WHEN TIME(a.check_in) > '07:30:00' AND TIME(a.check_in) <= '13:10:00' THEN 1 ELSE 0 END) as hadir_shift_siang,
-           SUM(CASE WHEN TIME(a.check_in) > '13:10:00' AND a.check_in IS NOT NULL THEN 1 ELSE 0 END) as hadir_invalid,
+           SUM(CASE 
+               WHEN a.status = 'Hadir' AND TIME(a.check_in) <= '07:45:00' THEN 1 
+               ELSE 0 
+           END) as hadir_shift_pagi,
+           SUM(CASE 
+               WHEN a.status = 'Hadir' AND TIME(a.check_in) > '07:45:00' AND TIME(a.check_in) <= '13:10:00' THEN 1 
+               ELSE 0 
+           END) as hadir_shift_siang,
+           SUM(CASE 
+               WHEN a.status = 'Hadir' AND TIME(a.check_in) > '13:10:00' THEN 1 
+               ELSE 0 
+           END) as hadir_invalid,
            SUM(CASE WHEN a.status = 'Telat' THEN 1 ELSE 0 END) as telat,
            SUM(CASE WHEN a.status = 'Izin' THEN 1 ELSE 0 END) as izin,
-           SUM(CASE WHEN a.status = 'Sakit' THEN 1 ELSE 0 END) as sakit,
-           SUM(CASE WHEN a.status = 'Alpa' THEN 1 ELSE 0 END) as alpa
+           SUM(CASE WHEN a.status = 'Sakit' THEN 1 ELSE 0 END) as sakit
     FROM users u
     LEFT JOIN attendance a ON a.user_id = u.user_id AND a.date BETWEEN ? AND ?
     WHERE u.is_active = 1
@@ -64,6 +72,7 @@ include __DIR__ . '/header.php';
             <tr class="text-left border-b border-gray-200">
               <th class="pb-3 font-medium text-gray-600">Name</th>
               <th class="pb-3 font-medium text-gray-600">Email</th>
+              <th class="pb-3 font-medium text-gray-600">Shift</th>
               <th class="pb-3 font-medium text-gray-600">Check-in</th>
               <th class="pb-3 font-medium text-gray-600">Check-out</th>
               <th class="pb-3 font-medium text-gray-600">Status</th>
@@ -80,6 +89,9 @@ include __DIR__ . '/header.php';
                 <td class="py-4 whitespace-nowrap text-sm text-gray-600">
                   <?= htmlspecialchars($record['email']) ?>
                 </td>
+                <td class="py-4 whitespace-nowrap text-sm text-gray-600">
+                  <?= htmlspecialchars($record['shift']) ?>
+                </td>
                 <td class="py-4 whitespace-nowrap text-sm">
                   <?= $record['check_in'] ?? '-' ?>
                 </td>
@@ -88,16 +100,33 @@ include __DIR__ . '/header.php';
                 </td>
                 <td class="py-4 whitespace-nowrap">
                   <span class="px-2.5 py-1 rounded-full text-xs font-medium 
-                  <?= $record['status'] === 'Hadir' ?
-                    (($record['check_in'] <= '07:30:00') ? 'bg-green-100 text-green-800' : (($record['check_in'] <= '13:10:00') ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800')) : ($record['status'] === 'Telat' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') ?>">
+                  <?php 
+                    if ($record['status'] === 'Hadir') {
+                        if ($record['check_in'] <= '07:45:00') {
+                            echo 'bg-green-100 text-green-800'; // Pagi
+                        } elseif ($record['check_in'] <= '13:10:00') {
+                            echo 'bg-blue-100 text-blue-800'; // Siang
+                        } else {
+                            echo 'bg-orange-100 text-orange-800'; // Invalid
+                        }
+                    } elseif ($record['status'] === 'Telat') {
+                        echo 'bg-yellow-100 text-yellow-800';
+                    } elseif ($record['status'] === 'Izin') {
+                        echo 'bg-indigo-100 text-indigo-800';
+                    } elseif ($record['status'] === 'Sakit') {
+                        echo 'bg-purple-100 text-purple-800';
+                    } else {
+                        echo 'bg-gray-100 text-gray-800';
+                    }
+                  ?>">
                     <?= htmlspecialchars($record['status']) ?>
                     <?php if ($record['status'] === 'Hadir'): ?>
-                      (<?= $record['check_in'] <= '07:30:00' ? 'Pagi' : ($record['check_in'] <= '13:10:00' ? 'Siang' : 'Invalid') ?>)
+                      (<?= $record['check_in'] <= '07:45:00' ? 'Pagi' : ($record['check_in'] <= '13:10:00' ? 'Siang' : 'Invalid') ?>)
                     <?php endif; ?>
                   </span>
                 </td>
                 <td class="py-4 whitespace-nowrap text-sm text-gray-700">
-                  <?= htmlspecialchars($record['location']) ?? '-' ?>
+                  <?= htmlspecialchars($record['location'] ?? '-') ?>
                 </td>
                 <td class="py-4 whitespace-nowrap text-sm text-gray-700">
                   <?= !empty($record['notes']) ? htmlspecialchars($record['notes']) : '-' ?>
@@ -135,7 +164,6 @@ include __DIR__ . '/header.php';
               <th class="pb-3 font-medium text-gray-600 text-center">Telat</th>
               <th class="pb-3 font-medium text-gray-600 text-center">Izin</th>
               <th class="pb-3 font-medium text-gray-600 text-center">Sakit</th>
-              <th class="pb-3 font-medium text-gray-600 text-center">Alpa</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -161,9 +189,6 @@ include __DIR__ . '/header.php';
                 </td>
                 <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-purple-600">
                   <?= $record['sakit'] ?? 0 ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-center font-medium text-red-600">
-                  <?= $record['alpa'] ?? 0 ?>
                 </td>
               </tr>
             <?php endforeach; ?>

@@ -131,7 +131,7 @@ include __DIR__ . '/header.php';
                   <?php endif; ?>
                 </td>
                 <!-- Kolom Aksi -->
-                <td class="py-4 whitespace-nowrap">
+                <td class="py-4 whitespace-nowrap space-x-1">
                   <?php if ($r['status'] === 'Progress'): ?>
                     <button
                       onclick="markAsDone(<?php echo $r['report_id']; ?>)"
@@ -139,11 +139,18 @@ include __DIR__ . '/header.php';
                       Tandai Selesai
                     </button>
                   <?php else: ?>
-                    <span class="text-gray-400 text-sm">-</span>
+                    <span class="text-gray-400 text-sm">Selesai</span>
                   <?php endif; ?>
-                </td>
-              </tr>
-            <?php endforeach; ?>
+
+                  <!-- Tombol Hapus -->
+                  <button
+                    onclick="deleteReport(<?php echo $r['report_id']; ?>)"
+                    class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
+                    title="Hapus laporan">
+                    Hapus
+                    </butt
+                      </tr>
+                  <?php endforeach; ?>
           </tbody>
         </table>
       </div>
@@ -231,6 +238,48 @@ include __DIR__ . '/header.php';
         alert('Terjadi kesalahan koneksi.');
         button.textContent = originalText;
         button.disabled = false;
+      });
+  }
+
+  // Fungsi: Hapus laporan
+  function deleteReport(reportId) {
+    if (!confirm('Anda yakin ingin menghapus laporan ini? Tindakan tidak bisa dibatalkan.')) {
+      return;
+    }
+
+    const row = event.target.closest('tr'); // Ambil baris tabel
+    const originalText = event.target.textContent;
+    event.target.textContent = 'Menghapus...';
+    event.target.disabled = true;
+
+    fetch('/delete_report_ajax.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'report_id=' + reportId + '&user_id=' + <?php echo $user_id; ?>
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Hapus baris dari tabel
+          row.classList.add('bg-red-50', 'animate-pulse');
+          setTimeout(() => {
+            row.remove();
+            alert('Laporan berhasil dihapus.');
+            location.reload(); // Opsional: reload untuk update chart
+          }, 300);
+        } else {
+          alert('Gagal menghapus: ' + data.message);
+          event.target.textContent = originalText;
+          event.target.disabled = false;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan koneksi.');
+        event.target.textContent = originalText;
+        event.target.disabled = false;
       });
   }
 </script>
