@@ -87,6 +87,7 @@ include __DIR__ . '/header.php';
               <th class="pb-3 font-medium text-gray-600">Work Force</th>
               <th class="pb-3 font-medium text-gray-600">Status</th>
               <th class="pb-3 font-medium text-gray-600">Bukti</th>
+              <th class="pb-3 font-medium text-gray-600">Action</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -104,22 +105,23 @@ include __DIR__ . '/header.php';
                 <td class="py-4 whitespace-nowrap text-[10px] sm:text-sm font-medium text-gray-800">
                   <?php echo htmlspecialchars($r['workforce_name'] ?? '-'); ?>
                 </td>
+                <!-- Kolom Status -->
                 <td class="py-4 whitespace-nowrap">
-                  <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $r['status'] === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' ?>">
-                    <?php echo htmlspecialchars($r['status']) ?>
+                  <span
+                    class="status-badge px-2.5 py-1 rounded-full text-xs font-medium 
+      <?php echo $r['status'] === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'; ?>"
+                    id="status-<?php echo $r['report_id']; ?>">
+                    <?php echo htmlspecialchars($r['status']); ?>
                   </span>
                 </td>
+
                 <td class="py-4 whitespace-nowrap">
-                  <?php
-                  // Tampilkan link jika ada proof_link
-                  if ($r['proof_link']): ?>
+                  <?php if ($r['proof_link']): ?>
                     <a href="<?php echo htmlspecialchars($r['proof_link']) ?>" target="_blank"
                       class="text-indigo-600 hover:text-indigo-800 text-sm font-medium hover:underline transition">
                       Lihat
                     </a>
-                  <?php
-                  // Tampilkan gambar jika ada proof_image
-                  elseif ($r['proof_image']): ?>
+                  <?php elseif ($r['proof_image']): ?>
                     <button onclick="openModal(<?php echo $r['report_id'] ?>)"
                       class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm transition">
                       See Picture
@@ -128,8 +130,27 @@ include __DIR__ . '/header.php';
                     <span class="text-gray-400 text-sm">-</span>
                   <?php endif; ?>
                 </td>
-              </tr>
-            <?php endforeach; ?>
+                <!-- Kolom Aksi -->
+                <td class="py-4 whitespace-nowrap space-x-1">
+                  <?php if ($r['status'] === 'Progress'): ?>
+                    <button
+                      onclick="markAsDone(<?php echo $r['report_id']; ?>)"
+                      class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">
+                      Tandai Selesai
+                    </button>
+                  <?php else: ?>
+                    <span class="text-gray-400 text-sm">Selesai</span>
+                  <?php endif; ?>
+
+                  <!-- Tombol Hapus -->
+                  <button
+                    onclick="deleteReport(<?php echo $r['report_id']; ?>)"
+                    class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
+                    title="Hapus laporan">
+                    Hapus
+                    </butt
+                      </tr>
+                  <?php endforeach; ?>
           </tbody>
         </table>
       </div>
@@ -172,6 +193,95 @@ include __DIR__ . '/header.php';
       }
     }
   });
+
+  // Fungsi: Tandai laporan sebagai Selesai
+  function markAsDone(reportId) {
+    if (!confirm('Yakin ingin tandai sebagai Selesai?')) return;
+
+    // Tampilkan loading
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Processing...';
+    button.disabled = true;
+
+    fetch('update_status_ajax.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'report_id=' + reportId + '&action=mark_done'
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Ubah badge menjadi "Selesai"
+          const statusEl = document.getElementById('status-' + reportId);
+          statusEl.textContent = 'Selesai';
+          statusEl.className = 'status-badge px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
+
+          // Hapus tombol atau ganti jadi "Done"
+          button.textContent = 'Selesai';
+          button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+          button.classList.add('bg-gray-400', 'text-gray-700', 'cursor-not-allowed');
+          button.disabled = true;
+
+          // Opsional: tampilkan notifikasi
+          alert('Status berhasil diperbarui!');
+        } else {
+          alert('Gagal: ' + data.message);
+          button.textContent = originalText;
+          button.disabled = false;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan koneksi.');
+        button.textContent = originalText;
+        button.disabled = false;
+      });
+  }
+
+  // Fungsi: Hapus laporan
+  function deleteReport(reportId) {
+    if (!confirm('Anda yakin ingin menghapus laporan ini? Tindakan tidak bisa dibatalkan.')) {
+      return;
+    }
+
+    const row = event.target.closest('tr'); // Ambil baris tabel
+    const originalText = event.target.textContent;
+    event.target.textContent = 'Menghapus...';
+    event.target.disabled = true;
+
+    fetch('/delete_report_ajax.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'report_id=' + reportId + '&user_id=' + <?php echo $user_id; ?>
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Hapus baris dari tabel
+          row.classList.add('bg-red-50', 'animate-pulse');
+          setTimeout(() => {
+            row.remove();
+            alert('Laporan berhasil dihapus.');
+            location.reload(); // Opsional: reload untuk update chart
+          }, 300);
+        } else {
+          alert('Gagal menghapus: ' + data.message);
+          event.target.textContent = originalText;
+          event.target.disabled = false;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan koneksi.');
+        event.target.textContent = originalText;
+        event.target.disabled = false;
+      });
+  }
 </script>
 
 <!-- Modal Popup -->
