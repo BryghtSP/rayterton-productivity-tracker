@@ -40,7 +40,16 @@ foreach ($daily as $r) {
 include __DIR__ . '/header.php';
 ?>
 
-<div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rayterton Prodtracker - Report My</title>
+  <link rel="stylesheet" href="css/output.css">
+</head>
+<body>
+  <div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
   <!-- Summary Card -->
   <div class="bg-white rounded-xl shadow-md overflow-hidden">
     <div class="p-6 md:p-8">
@@ -159,6 +168,8 @@ include __DIR__ . '/header.php';
     </div>
   </div>
 </div>
+</body>
+</html>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>

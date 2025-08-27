@@ -77,170 +77,185 @@ $shortRows = $short->fetchAll();
 include __DIR__ . '/header.php';
 ?>
 
-<div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
-  <!-- All Reports Card -->
-  <div class="bg-white rounded-xl shadow-md overflow-hidden">
-    <div class="p-6 md:p-8">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">All Reports</h1>
-        <form class="flex flex-col sm:flex-row items-center gap-2">
-          <input type="month" name="month" value="<?php echo htmlspecialchars($month) ?>" 
-                 class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-          <button type="submit" class="px-4 py-2 w-full md:w-[68px] bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-            Filter
-          </button>
-        </form>
-      </div>
+<!DOCTYPE html>
+<html lang="en">
 
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="text-left border-b border-gray-200">
-              <th class="pb-3 font-medium text-gray-600">Date</th>
-              <th class="pb-3 font-medium text-gray-600">Name</th>
-              <th class="pb-3 font-medium text-gray-600">Type</th>
-              <th class="pb-3 font-medium text-gray-600">Title</th>
-              <th class="pb-3 font-medium text-gray-600">Work Force</th>
-              <th class="pb-3 font-medium text-gray-600">Status</th>
-              <th class="pb-3 font-medium text-gray-600">Bukti</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <?php foreach($rows as $r): ?>
-            <tr class="hover:bg-gray-50 transition">
-              <td class="py-4 whitespace-nowrap text-sm text-gray-600">
-                <?php echo htmlspecialchars($r['report_date']) ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                <?php echo htmlspecialchars($r['name']) ?>
-              </td>
-              <td class="py-4 whitespace-nowrap text-sm text-gray-800">
-                <?php echo htmlspecialchars($r['job_type']) ?>
-              </td>
-              <td class="py-4 text-sm text-gray-800">
-                <?php echo htmlspecialchars($r['title']) ?>
-              </td>
-              <td class="py-4 text-sm text-gray-800">
-                <?php echo htmlspecialchars($r['workforce_name']) ?>
-              </td>
-              <td class="py-4 whitespace-nowrap">
-                <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $r['status']==='Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' ?>">
-                  <?php echo htmlspecialchars($r['status']) ?>
-                </span>
-              </td>
-              <td class="py-4 whitespace-nowrap">
-              <?php if($r['proof_link'] || $r['proof_image']): ?>
-                <button onclick="openModal(<?php echo $r['report_id'] ?>)" 
-                        class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 text-sm transition">
-                  Detail
-                </button>
-              <?php else: ?>
-                <span class="text-gray-400 text-sm">-</span>
-              <?php endif; ?>
-            </td>
-            </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rayterton Prodtracker - admin Reports</title>
+  <link rel="stylesheet" href="css/output.css">
+</head>
 
-      <!-- Pagination All Reports -->
-      <?php if($totalPages > 1): ?>
-        <div class="mt-4 flex flex-wrap gap-2">
-          <?php for($i=1; $i <= $totalPages; $i++): ?>
-            <a href="?month=<?php echo urlencode($month) ?>&page=<?php echo $i ?>&short_page=<?php echo $shortPage ?>" 
-               class="px-3 py-1 rounded <?php echo $i==$page?'bg-indigo-600 text-white':'bg-gray-200 text-gray-700' ?>">
-               <?php echo $i ?>
-            </a>
-          <?php endfor; ?>
+<body>
+  <div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+    <!-- All Reports Card -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="p-6 md:p-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <h1 class="text-2xl font-bold text-gray-800">All Reports</h1>
+          <form class="flex flex-col sm:flex-row items-center gap-2">
+            <input type="month" name="month" value="<?php echo htmlspecialchars($month) ?>"
+              class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            <button type="submit" class="px-4 py-2 w-full md:w-[68px] bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+              Filter
+            </button>
+          </form>
         </div>
-      <?php endif; ?>
-    </div>
-  </div>
 
-  <!-- Shortfall Card -->
-  <div class="bg-white rounded-xl shadow-md overflow-hidden">
-    <div class="p-6 md:p-8">
-      <h2 class="text-base sm:text-xl font-bold text-gray-800 mb-6">
-        Employees Less Than 2 Entries Today (<?php echo htmlspecialchars($today) ?>)
-      </h2>
-      
-      <?php if(!$shortRows): ?>
-        <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-          <p class="text-green-800 font-medium">All staff have met the daily target!</p>
-        </div>
-      <?php else: ?>
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
               <tr class="text-left border-b border-gray-200">
+                <th class="pb-3 font-medium text-gray-600">Date</th>
                 <th class="pb-3 font-medium text-gray-600">Name</th>
-                <th class="pb-3 font-medium text-gray-600">Email</th>
-                <th class="pb-3 font-medium text-gray-600">Amount</th>
+                <th class="pb-3 font-medium text-gray-600">Type</th>
+                <th class="pb-3 font-medium text-gray-600">Title</th>
+                <th class="pb-3 font-medium text-gray-600">Work Force</th>
+                <th class="pb-3 font-medium text-gray-600">Status</th>
+                <th class="pb-3 font-medium text-gray-600">Bukti</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
-              <?php foreach($shortRows as $s): ?>
-              <tr class="hover:bg-gray-50 transition">
-                <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                  <?php echo htmlspecialchars($s['name']) ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-gray-600">
-                  <?php echo htmlspecialchars($s['email']) ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm font-medium <?php echo (int)$s['c'] === 0 ? 'text-red-600' : 'text-yellow-600' ?>">
-                  <?php echo (int)$s['c'] ?>
-                </td>
-              </tr>
+              <?php foreach ($rows as $r): ?>
+                <tr class="hover:bg-gray-50 transition">
+                  <td class="py-4 whitespace-nowrap text-sm text-gray-600">
+                    <?php echo htmlspecialchars($r['report_date']) ?>
+                  </td>
+                  <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                    <?php echo htmlspecialchars($r['name']) ?>
+                  </td>
+                  <td class="py-4 whitespace-nowrap text-sm text-gray-800">
+                    <?php echo htmlspecialchars($r['job_type']) ?>
+                  </td>
+                  <td class="py-4 text-sm text-gray-800">
+                    <?php echo htmlspecialchars($r['title']) ?>
+                  </td>
+                  <td class="py-4 text-sm text-gray-800">
+                    <?php echo htmlspecialchars($r['workforce_name']) ?>
+                  </td>
+                  <td class="py-4 whitespace-nowrap">
+                    <span class="px-2.5 py-1 rounded-full text-xs font-medium <?php echo $r['status'] === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' ?>">
+                      <?php echo htmlspecialchars($r['status']) ?>
+                    </span>
+                  </td>
+                  <td class="py-4 whitespace-nowrap">
+                    <?php if ($r['proof_link'] || $r['proof_image']): ?>
+                      <button onclick="openModal(<?php echo $r['report_id'] ?>)"
+                        class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 text-sm transition">
+                        Detail
+                      </button>
+                    <?php else: ?>
+                      <span class="text-gray-400 text-sm">-</span>
+                    <?php endif; ?>
+                  </td>
+                </tr>
               <?php endforeach; ?>
             </tbody>
           </table>
         </div>
 
-        <!-- Pagination Shortfall -->
-        <?php if($totalShortPages > 1): ?>
+        <!-- Pagination All Reports -->
+        <?php if ($totalPages > 1): ?>
           <div class="mt-4 flex flex-wrap gap-2">
-            <?php for($i=1; $i <= $totalShortPages; $i++): ?>
-              <a href="?month=<?php echo urlencode($month) ?>&page=<?php echo $page ?>&short_page=<?php echo $i ?>" 
-                 class="px-3 py-1 rounded <?php echo $i==$shortPage?'bg-indigo-600 text-white':'bg-gray-200 text-gray-700' ?>">
-                 <?php echo $i ?>
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+              <a href="?month=<?php echo urlencode($month) ?>&page=<?php echo $i ?>&short_page=<?php echo $shortPage ?>"
+                class="px-3 py-1 rounded <?php echo $i == $page ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700' ?>">
+                <?php echo $i ?>
               </a>
             <?php endfor; ?>
           </div>
         <?php endif; ?>
-      <?php endif; ?>
-    </div>
-  </div>
-</div>
-
-
-<!-- Modal Popup -->
-<div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-  <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-    <div class="p-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-bold text-gray-800">Detail Laporan</h3>
-        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">&times;</button>
       </div>
-      <div id="modalContent"></div>
+    </div>
+
+    <!-- Shortfall Card -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="p-6 md:p-8">
+        <h2 class="text-base sm:text-xl font-bold text-gray-800 mb-6">
+          Employees Less Than 2 Entries Today (<?php echo htmlspecialchars($today) ?>)
+        </h2>
+
+        <?php if (!$shortRows): ?>
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+            <p class="text-green-800 font-medium">All staff have met the daily target!</p>
+          </div>
+        <?php else: ?>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="text-left border-b border-gray-200">
+                  <th class="pb-3 font-medium text-gray-600">Name</th>
+                  <th class="pb-3 font-medium text-gray-600">Email</th>
+                  <th class="pb-3 font-medium text-gray-600">Amount</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <?php foreach ($shortRows as $s): ?>
+                  <tr class="hover:bg-gray-50 transition">
+                    <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                      <?php echo htmlspecialchars($s['name']) ?>
+                    </td>
+                    <td class="py-4 whitespace-nowrap text-sm text-gray-600">
+                      <?php echo htmlspecialchars($s['email']) ?>
+                    </td>
+                    <td class="py-4 whitespace-nowrap text-sm font-medium <?php echo (int)$s['c'] === 0 ? 'text-red-600' : 'text-yellow-600' ?>">
+                      <?php echo (int)$s['c'] ?>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Shortfall -->
+          <?php if ($totalShortPages > 1): ?>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <?php for ($i = 1; $i <= $totalShortPages; $i++): ?>
+                <a href="?month=<?php echo urlencode($month) ?>&page=<?php echo $page ?>&short_page=<?php echo $i ?>"
+                  class="px-3 py-1 rounded <?php echo $i == $shortPage ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700' ?>">
+                  <?php echo $i ?>
+                </a>
+              <?php endfor; ?>
+            </div>
+          <?php endif; ?>
+        <?php endif; ?>
+      </div>
     </div>
   </div>
-</div>
+
+
+  <!-- Modal Popup -->
+  <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-bold text-gray-800">Detail Laporan</h3>
+          <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">&times;</button>
+        </div>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
 
 <script>
-function openModal(reportId) {
-  fetch(`get_report_detail.php?id=${reportId}`)
-    .then(response => response.text())
-    .then(data => {
-      document.getElementById('modalContent').innerHTML = data;
-      document.getElementById('reportModal').classList.remove('hidden');
-      document.body.style.overflow = 'hidden'; // Prevent scrolling
-    });
-}
-function closeModal() {
-  document.getElementById('reportModal').classList.add('hidden');
-  document.body.style.overflow = 'auto';
-}
+  function openModal(reportId) {
+    fetch(`get_report_detail.php?id=${reportId}`)
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('modalContent').innerHTML = data;
+        document.getElementById('reportModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+      });
+  }
+
+  function closeModal() {
+    document.getElementById('reportModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  }
 </script>
 
 <?php include __DIR__ . '/footer.php'; ?>

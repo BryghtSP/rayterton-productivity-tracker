@@ -40,7 +40,7 @@ $usersPage = array_slice($users, $offset, $limit);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Production Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="css/output.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
       .progress-bar { height: 8px; border-radius: 4px; }

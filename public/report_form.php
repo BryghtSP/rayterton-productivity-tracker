@@ -34,7 +34,16 @@ $job_types = $stmt->fetchAll(PDO::FETCH_ASSOC);
 include __DIR__ . '/header.php';
 ?>
 
-<div class="max-w-4xl mx-auto px-4 py-8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rayterton Prodtracker - Report Form</title>
+  <link rel="stylesheet" href="css/output.css">
+</head>
+<body>
+  <div class="max-w-4xl mx-auto px-4 py-8">
   <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
     <div class="p-6 md:p-8">
       <h1 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-4 border-gray-200">
@@ -149,5 +158,7 @@ include __DIR__ . '/header.php';
     </div>
   </div>
 </div>
+</body>
+</html>
 
 <?php include __DIR__ . '/footer.php'; ?>
