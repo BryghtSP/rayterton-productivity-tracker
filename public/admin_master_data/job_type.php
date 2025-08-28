@@ -233,43 +233,70 @@ function page_url($p) {
     </div>
 
     <ul class="flex flex-wrap items-center gap-2">
+      <!-- Tombol First -->
       <li>
-        <a href="<?= $page > 1 ? page_url($page - 1) : 'javascript:void(0)' ?>"
+        <a href="<?= $page > 1 ? page_url(1) : 'javascript:void(0)' ?>"
            class="px-3 py-1 rounded border <?= $page > 1 ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
-          &laquo; Prev
+          <span class="hidden sm:inline">&laquo; First</span>
+          <span class="sm:hidden">&laquo;</span>
         </a>
       </li>
 
+      <!-- Tombol Prev -->
+      <li>
+        <a href="<?= $page > 1 ? page_url($page - 1) : 'javascript:void(0)' ?>"
+           class="px-3 py-1 rounded border <?= $page > 1 ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
+          <span class="hidden sm:inline">&lsaquo; Prev</span>
+          <span class="sm:hidden">&lsaquo;</span>
+        </a>
+      </li>
+
+      <!-- Nomor Halaman -->
       <?php
       $start = max(1, $page - 2);
-      $end = min($totalPages, $page + 2);
+      $end   = min($totalPages, $page + 2);
+
       if ($start > 1) {
           echo '<li><a class="px-3 py-1 rounded border hover:bg-gray-100" href="' . page_url(1) . '">1</a></li>';
           if ($start > 2) echo '<li class="px-2">...</li>';
       }
+
       for ($p = $start; $p <= $end; $p++): ?>
         <li>
           <a href="<?= page_url($p) ?>"
-             class="px-3 py-1 rounded border <?= $p === $page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100' ?>">
+             class="px-3 py-1 rounded border <?= ($p == $page) ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100' ?>">
             <?= $p ?>
           </a>
         </li>
       <?php endfor;
+
       if ($end < $totalPages) {
           if ($end < $totalPages - 1) echo '<li class="px-2">...</li>';
           echo '<li><a class="px-3 py-1 rounded border hover:bg-gray-100" href="' . page_url($totalPages) . '">' . $totalPages . '</a></li>';
       }
       ?>
 
+      <!-- Tombol Next -->
       <li>
         <a href="<?= $page < $totalPages ? page_url($page + 1) : 'javascript:void(0)' ?>"
            class="px-3 py-1 rounded border <?= $page < $totalPages ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
-          Next &raquo;
+          <span class="hidden sm:inline">Next &rsaquo;</span>
+          <span class="sm:hidden">&rsaquo;</span>
+        </a>
+      </li>
+
+      <!-- Tombol Last -->
+      <li>
+        <a href="<?= $page < $totalPages ? page_url($totalPages) : 'javascript:void(0)' ?>"
+           class="px-3 py-1 rounded border <?= $page < $totalPages ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
+          <span class="hidden sm:inline">Last &raquo;</span>
+          <span class="sm:hidden">&raquo;</span>
         </a>
       </li>
     </ul>
   </nav>
 <?php endif; ?>
+
 
 <!-- JavaScript -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

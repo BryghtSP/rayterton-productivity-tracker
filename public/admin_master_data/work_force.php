@@ -5,7 +5,7 @@ require_admin();
 
 // Pastikan session aktif
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+  session_start();
 }
 
 $success = $_SESSION['success'] ?? '';
@@ -20,82 +20,82 @@ $offset = ($page - 1) * $perPage;
 
 // --- Handle Create & Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['entity'] === 'work_force') {
-    $workforce_name = trim($_POST['workforce_name']);
-    $action = $_POST['action'] ?? '';
-    $workforce_id = (int)($_POST['workforce_id'] ?? 0);
+  $workforce_name = trim($_POST['workforce_name']);
+  $action = $_POST['action'] ?? '';
+  $workforce_id = (int)($_POST['workforce_id'] ?? 0);
 
-    if (empty($workforce_name)) {
-        $_SESSION['error'] = "Nama Work Force wajib diisi.";
-    } else {
-        try {
-            if ($action === 'create') {
-                $stmt = $pdo->prepare("INSERT INTO work_force (workforce_name) VALUES (?)");
-                $stmt->execute([$workforce_name]);
-                $_SESSION['success'] = "Work Force berhasil ditambahkan.";
-            } elseif ($action === 'update') {
-                $stmt = $pdo->prepare("UPDATE work_force SET workforce_name = ? WHERE workforce_id = ?");
-                $stmt->execute([$workforce_name, $workforce_id]);
-                if ($stmt->rowCount()) {
-                    $_SESSION['success'] = "Work Force berhasil diperbarui.";
-                } else {
-                    $_SESSION['error'] = "Work Force tidak ditemukan.";
-                }
-            }
-
-            // Redirect
-            $params = ['tab' => 'work_force', 'page' => $page];
-            if ($search) $params['search'] = $search;
-            $redirect = 'admin_master_data.php?' . http_build_query($params);
-            echo "<script> window.location.href = '$redirect'; </script>";
-            exit;
-        } catch (PDOException $e) {
-            if ($e->getCode() == 23000) {
-                $_SESSION['error'] = $action === 'create'
-                    ? "Work Force dengan nama ini sudah ada."
-                    : "Nama Work Force sudah digunakan.";
-            } else {
-                $_SESSION['error'] = "Gagal menyimpan data.";
-            }
+  if (empty($workforce_name)) {
+    $_SESSION['error'] = "Nama Work Force wajib diisi.";
+  } else {
+    try {
+      if ($action === 'create') {
+        $stmt = $pdo->prepare("INSERT INTO work_force (workforce_name) VALUES (?)");
+        $stmt->execute([$workforce_name]);
+        $_SESSION['success'] = "Work Force berhasil ditambahkan.";
+      } elseif ($action === 'update') {
+        $stmt = $pdo->prepare("UPDATE work_force SET workforce_name = ? WHERE workforce_id = ?");
+        $stmt->execute([$workforce_name, $workforce_id]);
+        if ($stmt->rowCount()) {
+          $_SESSION['success'] = "Work Force berhasil diperbarui.";
+        } else {
+          $_SESSION['error'] = "Work Force tidak ditemukan.";
         }
+      }
+
+      // Redirect
+      $params = ['tab' => 'work_force', 'page' => $page];
+      if ($search) $params['search'] = $search;
+      $redirect = 'admin_master_data.php?' . http_build_query($params);
+      echo "<script> window.location.href = '$redirect'; </script>";
+      exit;
+    } catch (PDOException $e) {
+      if ($e->getCode() == 23000) {
+        $_SESSION['error'] = $action === 'create'
+          ? "Work Force dengan nama ini sudah ada."
+          : "Nama Work Force sudah digunakan.";
+      } else {
+        $_SESSION['error'] = "Gagal menyimpan data.";
+      }
     }
+  }
 }
 
 // --- Handle Delete
 if (isset($_GET['delete_work_force'])) {
-    $workforce_id = (int)$_GET['delete_work_force'];
-    try {
-        $stmt = $pdo->prepare("DELETE FROM work_force WHERE workforce_id = ?");
-        $stmt->execute([$workforce_id]);
+  $workforce_id = (int)$_GET['delete_work_force'];
+  try {
+    $stmt = $pdo->prepare("DELETE FROM work_force WHERE workforce_id = ?");
+    $stmt->execute([$workforce_id]);
 
-        if ($stmt->rowCount()) {
-            $_SESSION['success'] = "Work Force berhasil dihapus.";
-        } else {
-            $_SESSION['error'] = "Work Force tidak ditemukan.";
-        }
-    } catch (PDOException $e) {
-        $_SESSION['error'] = "Gagal menghapus data.";
+    if ($stmt->rowCount()) {
+      $_SESSION['success'] = "Work Force berhasil dihapus.";
+    } else {
+      $_SESSION['error'] = "Work Force tidak ditemukan.";
     }
+  } catch (PDOException $e) {
+    $_SESSION['error'] = "Gagal menghapus data.";
+  }
 
-    $params = ['tab' => 'work_force', 'page' => $page];
-    if ($search) $params['search'] = $search;
-    $redirect = 'admin_master_data.php?' . http_build_query($params);
-    echo "<script> window.location.href = '$redirect'; </script>";
-    exit;
+  $params = ['tab' => 'work_force', 'page' => $page];
+  if ($search) $params['search'] = $search;
+  $redirect = 'admin_master_data.php?' . http_build_query($params);
+  echo "<script> window.location.href = '$redirect'; </script>";
+  exit;
 }
 
 // --- Build WHERE clause
 $where = [];
 $params = [];
 if ($search) {
-    $where[] = "workforce_name LIKE ?";
-    $params[] = "%$search%";
+  $where[] = "workforce_name LIKE ?";
+  $params[] = "%$search%";
 }
 $whereSql = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
 
 // --- Total count
 $totalStmt = $pdo->prepare("SELECT COUNT(*) AS cnt FROM work_force $whereSql");
 foreach ($params as $i => $val) {
-    $totalStmt->bindValue($i + 1, $val, PDO::PARAM_STR);
+  $totalStmt->bindValue($i + 1, $val, PDO::PARAM_STR);
 }
 $totalStmt->execute();
 $totalRow = $totalStmt->fetch();
@@ -107,7 +107,7 @@ $sql = "SELECT * FROM work_force $whereSql ORDER BY workforce_name ASC LIMIT ? O
 $stmt = $pdo->prepare($sql);
 $index = 1;
 foreach ($params as $val) {
-    $stmt->bindValue($index++, $val, PDO::PARAM_STR);
+  $stmt->bindValue($index++, $val, PDO::PARAM_STR);
 }
 $stmt->bindValue($index++, $perPage, PDO::PARAM_INT);
 $stmt->bindValue($index, $offset, PDO::PARAM_INT);
@@ -115,10 +115,11 @@ $stmt->execute();
 $workforces = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // --- Helper pagination
-function page_url($p) {
-    $q = $_GET;
-    $q['page'] = $p;
-    return 'admin_master_data.php?' . http_build_query($q);
+function page_url($p)
+{
+  $q = $_GET;
+  $q['page'] = $p;
+  return 'admin_master_data.php?' . http_build_query($q);
 }
 ?>
 
@@ -147,8 +148,8 @@ function page_url($p) {
     <div class="mb-4">
       <label class="block text-sm font-medium text-gray-700 mb-1">Work Force Name</label>
       <input type="text" name="workforce_name" id="workforce_name"
-             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-             placeholder="Example: Inare, Antara" required>
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Example: Inare, Antara" required>
     </div>
 
     <div class="flex gap-3">
@@ -171,8 +172,7 @@ function page_url($p) {
       name="search"
       value="<?= htmlspecialchars($search) ?>"
       placeholder="Search Work Force..."
-      class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-    />
+      class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
     <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
       Search
     </button>
@@ -233,87 +233,117 @@ function page_url($p) {
     </div>
 
     <ul class="flex flex-wrap items-center gap-2">
+      <!-- Tombol First -->
       <li>
-        <a href="<?= $page > 1 ? page_url($page - 1) : 'javascript:void(0)' ?>"
-           class="px-3 py-1 rounded border <?= $page > 1 ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
-          &laquo; Prev
+        <a href="<?= $page > 1 ? page_url(1) : 'javascript:void(0)' ?>"
+          class="px-3 py-1 rounded border <?= $page > 1 ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
+          <span class="hidden sm:inline">&laquo; First</span>
+          <span class="sm:hidden">&laquo;</span>
         </a>
       </li>
 
+      <!-- Tombol Prev -->
+      <li>
+        <a href="<?= $page > 1 ? page_url($page - 1) : 'javascript:void(0)' ?>"
+          class="px-3 py-1 rounded border <?= $page > 1 ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
+          <span class="hidden sm:inline">&lsaquo; Prev</span>
+          <span class="sm:hidden">&lsaquo;</span>
+        </a>
+      </li>
+
+      <!-- Nomor Halaman -->
       <?php
       $start = max(1, $page - 2);
-      $end = min($totalPages, $page + 2);
+      $end   = min($totalPages, $page + 2);
+
       if ($start > 1) {
-          echo '<li><a class="px-3 py-1 rounded border hover:bg-gray-100" href="' . page_url(1) . '">1</a></li>';
-          if ($start > 2) echo '<li class="px-2">...</li>';
+        echo '<li><a class="px-3 py-1 rounded border hover:bg-gray-100" href="' . page_url(1) . '">1</a></li>';
+        if ($start > 2) echo '<li class="px-2">...</li>';
       }
+
       for ($p = $start; $p <= $end; $p++): ?>
         <li>
           <a href="<?= page_url($p) ?>"
-             class="px-3 py-1 rounded border <?= $p === $page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100' ?>">
+            class="px-3 py-1 rounded border <?= $p === $page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100' ?>">
             <?= $p ?>
           </a>
         </li>
       <?php endfor;
+
       if ($end < $totalPages) {
-          if ($end < $totalPages - 1) echo '<li class="px-2">...</li>';
-          echo '<li><a class="px-3 py-1 rounded border hover:bg-gray-100" href="' . page_url($totalPages) . '">' . $totalPages . '</a></li>';
+        if ($end < $totalPages - 1) echo '<li class="px-2">...</li>';
+        echo '<li><a class="px-3 py-1 rounded border hover:bg-gray-100" href="' . page_url($totalPages) . '">' . $totalPages . '</a></li>';
       }
       ?>
 
+      <!-- Tombol Next -->
       <li>
         <a href="<?= $page < $totalPages ? page_url($page + 1) : 'javascript:void(0)' ?>"
-           class="px-3 py-1 rounded border <?= $page < $totalPages ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
-          Next &raquo;
+          class="px-3 py-1 rounded border <?= $page < $totalPages ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
+          <span class="hidden sm:inline">Next &rsaquo;</span>
+          <span class="sm:hidden">&rsaquo;</span>
+        </a>
+      </li>
+
+      <!-- Tombol Last -->
+      <li>
+        <a href="<?= $page < $totalPages ? page_url($totalPages) : 'javascript:void(0)' ?>"
+          class="px-3 py-1 rounded border <?= $page < $totalPages ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed' ?>">
+          <span class="hidden sm:inline">Last &raquo;</span>
+          <span class="sm:hidden">&raquo;</span>
         </a>
       </li>
     </ul>
   </nav>
 <?php endif; ?>
 
+
 <!-- JavaScript -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Edit Workforce
-function editWorkforce(id, name) {
+  // Edit Workforce
+  function editWorkforce(id, name) {
     document.getElementById('form-title').textContent = 'Edit Work Force';
     document.getElementById('workforce_name').value = name;
     document.getElementById('action-input').value = 'update';
     document.getElementById('workforce-id-input').value = id;
     document.getElementById('cancel-edit').classList.remove('hidden');
 
-    document.getElementById('workforce-form-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
+    document.getElementById('workforce-form-section').scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+  }
 
-// Cancel edit
-document.getElementById('cancel-edit')?.addEventListener('click', function () {
+  // Cancel edit
+  document.getElementById('cancel-edit')?.addEventListener('click', function() {
     document.getElementById('workforce-form').reset();
     document.getElementById('form-title').textContent = 'Tambah Work Force Baru';
     document.getElementById('action-input').value = 'create';
     document.getElementById('workforce-id-input').value = '';
     this.classList.add('hidden');
-});
+  });
 
-// Konfirmasi hapus
-function confirmDelete(id, name) {
+  // Konfirmasi hapus
+  function confirmDelete(id, name) {
     Swal.fire({
-        title: 'Yakin hapus?',
-        text: `Anda akan menghapus Work Force: "${name}"`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Ya, hapus!',
-        cancelButtonText: 'Batal'
+      title: 'Yakin hapus?',
+      text: `Anda akan menghapus Work Force: "${name}"`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
     }).then((result) => {
-        if (result.isConfirmed) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('delete_work_force', id);
-            url.searchParams.set('tab', 'work_force');
-            window.location.href = url.toString();
-        }
+      if (result.isConfirmed) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('delete_work_force', id);
+        url.searchParams.set('tab', 'work_force');
+        window.location.href = url.toString();
+      }
     });
-}
+  }
 </script>
 
 <?php include __DIR__ . '/../footer.php'; ?>

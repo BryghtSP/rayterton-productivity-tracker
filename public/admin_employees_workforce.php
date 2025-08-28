@@ -156,15 +156,15 @@ include __DIR__ . '/header.php';
 
             <!-- Form Tambah/Edit -->
             <div class="bg-gray-50 p-6 rounded-lg mb-8">
-               <div class="flex justify-between items-center">
-                 <h2 class="text-lg font-semibold text-gray-800 mb-4" id="form-title">
-                    Added New Relation
-                </h2>
-                <!-- Total Data -->
-                <div class="mb-3 text-sm text-gray-600">
-                    Total data: <?= $total ?>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4" id="form-title">
+                        Added New Relation
+                    </h2>
+                    <!-- Total Data -->
+                    <div class="mb-3 text-sm text-gray-600">
+                        Total data: <?= $total ?>
+                    </div>
                 </div>
-               </div>
 
                 <form method="POST" id="relation-form">
                     <input type="hidden" name="action" value="add" id="action-input">
@@ -276,39 +276,54 @@ include __DIR__ . '/header.php';
 
             <!-- Pagination -->
             <?php if ($totalPages > 1): ?>
-                <div class="flex justify-between items-center mt-6">
+                <div class="flex flex-col md:flex-row justify-between items-center mt-6 gap-3">
                     <div class="text-sm text-gray-600">
                         Page <?= $page ?> of <?= $totalPages ?>
                     </div>
-                    <nav class="flex flex-wrap justify-center gap-1 mt-2">
+
+                    <nav class="flex flex-wrap justify-center gap-1">
+                        <!-- Tombol First -->
+                        <?php if ($page > 1): ?>
+                            <a href="?search=<?= urlencode($search) ?>&page=1"
+                                class="px-3 py-2 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition">
+                                <span class="hidden sm:inline">« first</span>
+                                <span class="sm:hidden">«</span>
+                            </a>
+                        <?php else: ?>
+                            <span class="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed">
+                                <span class="hidden sm:inline">« first</span>
+                                <span class="sm:hidden">«</span>
+                            </span>
+                        <?php endif; ?>
+
                         <!-- Tombol Previous -->
                         <?php if ($page > 1): ?>
                             <a href="?search=<?= urlencode($search) ?>&page=<?= $page - 1 ?>"
                                 class="px-3 py-2 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition">
-                                &lt; prev
+                                <span class="hidden sm:inline">&lt; prev</span>
+                                <span class="sm:hidden">&lt;</span>
                             </a>
                         <?php else: ?>
                             <span class="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed">
-                                &lt; prev
+                                <span class="hidden sm:inline">&lt; prev</span>
+                                <span class="sm:hidden">&lt;</span>
                             </span>
                         <?php endif; ?>
 
                         <!-- Tombol Halaman -->
                         <?php
-                        // Tentukan rentang halaman yang akan ditampilkan
                         $startPage = max(1, $page - 2);
                         $endPage = min($totalPages, $startPage + 4);
-
-                        // Sesuaikan jika di akhir
                         if ($endPage - $startPage < 4) {
                             $startPage = max(1, $endPage - 4);
                         }
-
                         for ($i = $startPage; $i <= $endPage; $i++):
                         ?>
                             <a href="?search=<?= urlencode($search) ?>&page=<?= $i ?>"
-                                class="<?= $i == $page ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50' ?>
-                  px-3 py-2 border border-gray-300 rounded text-sm font-medium transition">
+                                class="<?= ($i == $page)
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'bg-white text-indigo-600 hover:bg-indigo-50' ?>
+            px-3 py-2 border border-gray-300 rounded text-sm font-medium transition">
                                 <?= $i ?>
                             </a>
                         <?php endfor; ?>
@@ -317,108 +332,124 @@ include __DIR__ . '/header.php';
                         <?php if ($page < $totalPages): ?>
                             <a href="?search=<?= urlencode($search) ?>&page=<?= $page + 1 ?>"
                                 class="px-3 py-2 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition">
-                                next &gt;
+                                <span class="hidden sm:inline">next &gt;</span>
+                                <span class="sm:hidden">&gt;</span>
                             </a>
                         <?php else: ?>
                             <span class="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed">
-                                next &gt;
+                                <span class="hidden sm:inline">next &gt;</span>
+                                <span class="sm:hidden">&gt;</span>
+                            </span>
+                        <?php endif; ?>
+
+                        <!-- Tombol Last -->
+                        <?php if ($page < $totalPages): ?>
+                            <a href="?search=<?= urlencode($search) ?>&page=<?= $totalPages ?>"
+                                class="px-3 py-2 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition">
+                                <span class="hidden sm:inline">last »</span>
+                                <span class="sm:hidden">»</span>
+                            </a>
+                        <?php else: ?>
+                            <span class="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed">
+                                <span class="hidden sm:inline">last »</span>
+                                <span class="sm:hidden">»</span>
                             </span>
                         <?php endif; ?>
                     </nav>
                 </div>
             <?php endif; ?>
+
         </div>
     </div>
-</div>
 
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- JavaScript untuk Edit dan SweetAlert -->
-<script>
-    // Fungsi untuk menampilkan notifikasi dari PHP
-    <?php if ($success): ?>
-        Swal.fire({
-            icon: 'success',
-            title: 'Sukses',
-            text: '<?= addslashes($success) ?>',
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-    <?php endif; ?>
+    <!-- JavaScript untuk Edit dan SweetAlert -->
+    <script>
+        // Fungsi untuk menampilkan notifikasi dari PHP
+        <?php if ($success): ?>
+            Swal.fire({
+                icon: 'success',
+                title: 'Sukses',
+                text: '<?= addslashes($success) ?>',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        <?php endif; ?>
 
-    <?php if ($error): ?>
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: '<?= addslashes($error) ?>',
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true
-        });
-    <?php endif; ?>
-
-    function editRelation(empId, wfId, empName, wfName) {
-        document.getElementById('form-title').textContent = 'Edit Relasi';
-        document.getElementById('employee_id').value = empId;
-        document.getElementById('workforce_id').value = wfId;
-        document.getElementById('action-input').value = 'edit';
-        document.getElementById('old-employee-id').value = empId;
-        document.getElementById('old-workforce-id').value = wfId;
-        document.getElementById('cancel-edit').classList.remove('hidden');
-
-        // Scroll ke form
-        document.getElementById('relation-form').scrollIntoView({
-            behavior: 'smooth'
-        });
-    }
-
-    function confirmDelete(empId, wfId, empName, wfName) {
-        Swal.fire({
-            title: 'Konfirmasi Hapus',
-            html: `Yakin hapus relasi antara <b>${empName}</b> dan <b>${wfName}</b>?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Ya, Hapus!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = `?delete_emp=${empId}&delete_wf=${wfId}&search=<?= urlencode($search) ?>&page=<?= $page ?>`;
-            }
-        });
-    }
-
-    document.getElementById('cancel-edit')?.addEventListener('click', function() {
-        const form = document.getElementById('relation-form');
-        form.reset();
-        document.getElementById('form-title').textContent = 'Tambah Relasi Baru';
-        document.getElementById('action-input').value = 'add';
-        document.getElementById('old-employee-id').value = '';
-        document.getElementById('old-workforce-id').value = '';
-        this.classList.add('hidden');
-    });
-
-    // Validasi form sebelum submit
-    document.getElementById('relation-form')?.addEventListener('submit', function(e) {
-        const employeeId = document.getElementById('employee_id').value;
-        const workforceId = document.getElementById('workforce_id').value;
-
-        if (!employeeId || !workforceId) {
-            e.preventDefault();
+        <?php if ($error): ?>
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Pilih Employee dan Work Force terlebih dahulu!',
+                text: '<?= addslashes($error) ?>',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+        <?php endif; ?>
+
+        function editRelation(empId, wfId, empName, wfName) {
+            document.getElementById('form-title').textContent = 'Edit Relasi';
+            document.getElementById('employee_id').value = empId;
+            document.getElementById('workforce_id').value = wfId;
+            document.getElementById('action-input').value = 'edit';
+            document.getElementById('old-employee-id').value = empId;
+            document.getElementById('old-workforce-id').value = wfId;
+            document.getElementById('cancel-edit').classList.remove('hidden');
+
+            // Scroll ke form
+            document.getElementById('relation-form').scrollIntoView({
+                behavior: 'smooth'
             });
         }
-    });
-</script>
 
-<?php include __DIR__ . '/footer.php'; ?>
+        function confirmDelete(empId, wfId, empName, wfName) {
+            Swal.fire({
+                title: 'Konfirmasi Hapus',
+                html: `Yakin hapus relasi antara <b>${empName}</b> dan <b>${wfName}</b>?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `?delete_emp=${empId}&delete_wf=${wfId}&search=<?= urlencode($search) ?>&page=<?= $page ?>`;
+                }
+            });
+        }
+
+        document.getElementById('cancel-edit')?.addEventListener('click', function() {
+            const form = document.getElementById('relation-form');
+            form.reset();
+            document.getElementById('form-title').textContent = 'Tambah Relasi Baru';
+            document.getElementById('action-input').value = 'add';
+            document.getElementById('old-employee-id').value = '';
+            document.getElementById('old-workforce-id').value = '';
+            this.classList.add('hidden');
+        });
+
+        // Validasi form sebelum submit
+        document.getElementById('relation-form')?.addEventListener('submit', function(e) {
+            const employeeId = document.getElementById('employee_id').value;
+            const workforceId = document.getElementById('workforce_id').value;
+
+            if (!employeeId || !workforceId) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Pilih Employee dan Work Force terlebih dahulu!',
+                });
+            }
+        });
+    </script>
+
+    <?php include __DIR__ . '/footer.php'; ?>
