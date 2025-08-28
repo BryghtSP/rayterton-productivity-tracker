@@ -127,6 +127,7 @@ require_once __DIR__ . '/../lib/auth.php';
               <a href="admin_reports.php" class="block px-3 py-2 rounded-md text-sm <?= basename($_SERVER['PHP_SELF']) === 'admin_reports.php' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100' ?>">All Reports</a>
               <a href="admin_attendance.php" class="block px-3 py-2 rounded-md text-sm <?= basename($_SERVER['PHP_SELF']) === 'admin_attendance.php' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100' ?>">Attendance Report</a>
               <a href="admin_master_data.php" class="block px-3 py-2 rounded-md text-sm <?= basename($_SERVER['PHP_SELF']) === 'admin_master_data.php' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100' ?>">Master Data</a>
+              <a href="admin_employees_workforce.php" class="block px-3 py-2 rounded-md text-sm <?= basename($_SERVER['PHP_SELF']) === 'admin_employees_workforce.php' ? 'text-indigo-700 bg-indigo-50' : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100' ?>">Employee - workforcce</a>
             </div>
           </div>
           <?php endif; ?>
