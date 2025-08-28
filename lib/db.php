@@ -1,10 +1,10 @@
 <?php
 // lib/db.php
 // Update these credentials for your server
-$DB_HOST = getenv('DB_HOST') ?: 'raytertonapps.com';
+$DB_HOST = getenv('DB_HOST') ?: 'localhost';
 $DB_NAME = getenv('DB_NAME') ?: 'raytert2_prodtracker';
-$DB_USER = getenv('DB_USER') ?: 'raytert2_prodtracker';
-$DB_PASS = getenv('DB_PASS') ?: 'RTNprodtracker';
+$DB_USER = getenv('DB_USER') ?: 'root';
+$DB_PASS = getenv('DB_PASS') ?: '';
 date_default_timezone_set('Asia/Jakarta');
 
 try {

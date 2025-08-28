@@ -82,7 +82,7 @@ include __DIR__ . '/header.php';
         <!-- Title & Work Force -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Judul/Menu/Layar</label>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Title/Menu/Layar</label>
             <input type="text" name="title"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
               placeholder="Contoh: Login Page, Fitur Export PDF" required>
@@ -126,7 +126,7 @@ include __DIR__ . '/header.php';
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Bukti (URL repo/screenshot)</label>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Proof (URL repo/screenshot)</label>
             <input type="url" name="proof_link" placeholder="https://..."
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150">
           </div>
@@ -134,7 +134,7 @@ include __DIR__ . '/header.php';
 
         <!-- Proof Image Upload -->
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-2">Bukti (Foto)</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Proof (Foto)</label>
           <input type="file" name="proof_image" accept="image/*"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150">
           <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, JPEG (maks. ukuran sesuai server)</p>

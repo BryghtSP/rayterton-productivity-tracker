@@ -98,7 +98,7 @@ include __DIR__ . '/header.php';
               <th class="pb-3 font-medium text-gray-600">Title</th>
               <th class="pb-3 font-medium text-gray-600">Work Force</th>
               <th class="pb-3 font-medium text-gray-600">Status</th>
-              <th class="pb-3 font-medium text-gray-600">Bukti</th>
+              <th class="pb-3 font-medium text-gray-600">Proof</th>
               <th class="pb-3 font-medium text-gray-600">Action</th>
             </tr>
           </thead>
