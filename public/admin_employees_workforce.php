@@ -307,7 +307,7 @@ include __DIR__ . '/header.php';
                         for ($i = $startPage; $i <= $endPage; $i++):
                         ?>
                             <a href="?search=<?= urlencode($search) ?>&page=<?= $i ?>"
-                                class="<?= $i === $page ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50' ?>
+                                class="<?= $i == $page ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50' ?>
                   px-3 py-2 border border-gray-300 rounded text-sm font-medium transition">
                                 <?= $i ?>
                             </a>
