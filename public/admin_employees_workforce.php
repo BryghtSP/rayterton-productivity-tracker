@@ -212,12 +212,12 @@ include __DIR__ . '/header.php';
             <div class="mb-6">
                 <form method="GET" class="flex flex-col md:flex-row gap-3">
                     <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
-                        placeholder="Cari employee atau work force..."
+                        placeholder="Search employee or work force..."
                         class="px-4 py-2 border border-gray-300 rounded-lg flex-1">
                     <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                         Search
                     </button>
-                    <a href="admin_employees_workforce.php" class="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500">
+                    <a href="admin_employees_workforce.php" class="px-4 py-2 text-center bg-gray-400 text-white rounded-lg hover:bg-gray-500">
                         Clear
                     </a>
                 </form>
