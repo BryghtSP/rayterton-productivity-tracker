@@ -164,7 +164,7 @@ class="w-full py-3 px-4 <?= !$attendance || !$attendance['check_in'] || $attenda
 <h2 class="text-lg font-bold mb-4">Check-in Confirmation</h2>
 <form method="post">
 <p class="text-sm text-gray-600 mb-3">
-<strong>Morning:</strong> 00:00 - 11:59 | <strong>Afternoon:</strong> 12:00 - 23:59
+<strong>Morning:</strong> 07:30 - 11:59 | <strong>Afternoon:</strong> 13:00 - 17:30
 </p>
 
 <div class="mb-4">
