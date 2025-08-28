@@ -171,12 +171,13 @@ class="w-full py-3 px-4 <?= !$attendance || !$attendance['check_in'] || $attenda
 <label class="block text-sm font-medium mb-1">Shift</label>
 <select name="shift" required class="w-full border rounded-lg p-2" id="shiftSelect">
 <option value="">-- Select Shift --</option>
-<option value="Morning" data-hint="Morning shift: 00:00 - 11:59">Morning</option>
-<option value="Afternoon" data-hint="Afternoon shift: 12:00 - 23:59">Afternoon</option>
-<option value="WFO" data-hint="Whole Day at Office: work at office, present all day">WFO</option>
-<option value="WAC" data-hint="Working at Client: on-site at client location">WAC</option>
-<option value="WFH" data-hint="Working from Home: work remotely from home">WFH</option>
-<option value="WFA" data-hint="Working from Anywhere: work remotely from any location">WFA</option>
+<option value="Morning" data-hint="Morning shift: 00:00 - 11:59">Pagi</option>
+<option value="Afternoon" data-hint="Afternoon shift: 12:00 - 23:59">Siang</option>
+<option value="WFO" data-hint="Whole Day at Office: work at office, present all day"> Whole Day at Office (WFO)</option>
+<option value="WAC" data-hint="Working at Client: on-site at client location">Working at Client (WAC)</option>
+<option value="WFH" data-hint="Working from Home: work remotely from home">Working from Home (WFH)</option>
+<option value="WFA" data-hint="Working from Anywhere: work remotely from any location">Working from Anywhere (WFA)
+</option>
 </select>
 <p id="shiftHint" class="mt-1 text-xs text-gray-500 italic">Please select your shift.</p>
 </div>
