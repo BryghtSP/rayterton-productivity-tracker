@@ -28,14 +28,14 @@ $employee = $stmt->fetch();
 $employee_id = $employee['employee_id'];
 
 // Validasi: pastikan workforce_id dimiliki oleh employee ini
-$check = $pdo->prepare("
-        SELECT 1 FROM employees_workforce 
-        WHERE employee_id = ? AND workforce_id = ?
-    ");
-$check->execute([$employee_id, $workforce_id]);
-if (!$check->fetch()) {
-    die("Anda tidak memiliki akses ke work_force ini.");
-}
+// $check = $pdo->prepare("
+//         SELECT 1 FROM employees_workforce 
+//         WHERE employee_id = ? AND workforce_id = ?
+//     ");
+// $check->execute([$employee_id, $workforce_id]);
+// if (!$check->fetch()) {
+//     die("Anda tidak memiliki akses ke work_force ini.");
+// }
 
 // Handle file upload dengan penamaan otomatis (tanpa kompresi)
 $proof_image_path = null;

@@ -16,15 +16,8 @@ if (!$employee) {
 
 $employee_id = $employee['employee_id'];
 
-// Ambil semua work_force yang terhubung dengan employee ini
-$stmt = $pdo->prepare("
-    SELECT wf.workforce_id, wf.workforce_name
-    FROM work_force wf
-    JOIN employees_workforce ew ON wf.workforce_id = ew.workforce_id
-    WHERE ew.employee_id = ?
-    ORDER BY wf.workforce_name
-");
-$stmt->execute([$employee_id]);
+// Ambil semua work_force 
+$stmt = $pdo->query("SELECT workforce_id, workforce_name FROM work_force ORDER BY workforce_name");
 $work_forces = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 //colong table job_type
