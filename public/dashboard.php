@@ -29,10 +29,18 @@ $typeRows = $types->fetchAll();
 // Pagination
 $limit = 5; 
 $page  = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 $totalData = count($users);
 $totalPage = ceil($totalData / $limit);
 $usersPage = array_slice($users, $offset, $limit);
+
+// Determine page range for display
+$startPage = max(1, $page - 2);
+$endPage = min($totalPage, $startPage + 4);
+if ($endPage - $startPage < 4) {
+    $startPage = max(1, $endPage - 4);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -114,18 +122,86 @@ $usersPage = array_slice($users, $offset, $limit);
         </div>
 
         <!-- Pagination -->
-        <div class="flex justify-center mt-4 space-x-2">
-          <?php for ($i = 1; $i <= $totalPage; $i++): ?>
-            <?php if ($i == $page): ?>
-              <span class="px-3 py-1 rounded bg-indigo-600 text-white"><?php echo $i ?></span>
-            <?php else: ?>
-              <a href="?page=<?php echo $i ?>&month=<?php echo htmlspecialchars($month) ?>"
-                 class="px-3 py-1 rounded bg-gray-200 hover:bg-indigo-500 hover:text-white transition">
-                <?php echo $i ?>
-              </a>
-            <?php endif; ?>
-          <?php endfor; ?>
-        </div>
+        <?php if ($totalPage > 1): ?>
+          <div class="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+            <div class="text-sm text-gray-600 whitespace-nowrap">
+              Page <?= $page ?> of <?= $totalPage ?>
+            </div>
+            <nav class="flex flex-wrap justify-center gap-1">
+              <!-- First Page Button -->
+              <?php if ($page > 1): ?>
+                <a href="?page=1&month=<?= htmlspecialchars($month) ?>"
+                   class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt;&lt; First</span>
+                  <span class="sm:hidden">First</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt;&lt; First</span>
+                  <span class="sm:hidden">First</span>
+                </span>
+              <?php endif; ?>
+
+              <!-- Previous Button -->
+              <?php if ($page > 1): ?>
+                <a href="?page=<?= $page - 1 ?>&month=<?= htmlspecialchars($month) ?>"
+                   class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt; Prev</span>
+                  <span class="sm:hidden">&lt;</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt; Prev</span>
+                  <span class="sm:hidden">&lt;</span>
+                </span>
+              <?php endif; ?>
+
+              <!-- Page Numbers - Hidden on mobile if many pages -->
+              <div class="hidden xs:flex gap-1">
+                <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                  <a href="?page=<?= $i ?>&month=<?= htmlspecialchars($month) ?>"
+                     class="<?= $i === $page ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50' ?>
+                      px-3 py-2 border border-gray-300 rounded text-sm font-medium transition">
+                    <?= $i ?>
+                  </a>
+                <?php endfor; ?>
+              </div>
+
+              <!-- Page indicator for mobile -->
+              <div class="xs:hidden px-3 py-2 bg-indigo-600 text-white border border-gray-300 rounded text-sm font-medium">
+                <?= $page ?>
+              </div>
+
+              <!-- Next Button -->
+              <?php if ($page < $totalPage): ?>
+                <a href="?page=<?= $page + 1 ?>&month=<?= htmlspecialchars($month) ?>"
+                   class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">Next &gt;</span>
+                  <span class="sm:hidden">&gt;</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">Next &gt;</span>
+                  <span class="sm:hidden">&gt;</span>
+                </span>
+              <?php endif; ?>
+
+              <!-- Last Page Button -->
+              <?php if ($page < $totalPage): ?>
+                <a href="?page=<?= $totalPage ?>&month=<?= htmlspecialchars($month) ?>"
+                   class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">Last &gt;&gt;</span>
+                  <span class="sm:hidden">Last</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">Last &gt;&gt;</span>
+                  <span class="sm:hidden">Last</span>
+                </span>
+              <?php endif; ?>
+            </nav>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
 

@@ -34,6 +34,7 @@ include __DIR__ . '/header.php';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rayterton Prodtracker - Report Form</title>
   <link rel="stylesheet" href="css/output.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <div class="max-w-4xl mx-auto px-4 py-8">
@@ -59,7 +60,7 @@ include __DIR__ . '/header.php';
             <select name="job_type"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
               required>
-              <option value="">-- Pilih Job Type --</option>
+              <option value="">-- Select Job Type --</option>
               <?php foreach ($job_types as $jt): ?>
                 <option value="<?= $jt['job_type_id'] ?>">
                   <?= htmlspecialchars($jt['name']) ?>
@@ -78,7 +79,7 @@ include __DIR__ . '/header.php';
             <label class="block text-sm font-semibold text-gray-700 mb-2">Title/Menu/Layar</label>
             <input type="text" name="title"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
-              placeholder="Contoh: Login Page, Fitur Export PDF" required>
+              placeholder="Example: Login Page, Fitur Export PDF" required>
           </div>
 
           <div>
@@ -86,7 +87,7 @@ include __DIR__ . '/header.php';
             <select name="workforce_id"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
               required>
-              <option value="">-- Pilih Work Force --</option>
+              <option value="">-- Select Work Force --</option>
               <?php foreach ($work_forces as $wf): ?>
                 <option value="<?= $wf['workforce_id'] ?>">
                   <?= htmlspecialchars($wf['workforce_name']) ?>
@@ -104,7 +105,7 @@ include __DIR__ . '/header.php';
           <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
           <textarea name="description" rows="4"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
-            placeholder="Jelaskan pekerjaan yang dilakukan..."></textarea>
+            placeholder="Describe task..."></textarea>
         </div>
 
         <!-- Status & Proof Link -->
@@ -129,13 +130,14 @@ include __DIR__ . '/header.php';
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Proof (Foto)</label>
           <input type="file" name="proof_image" accept="image/*"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150">
-          <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, JPEG (maks. ukuran sesuai server)</p>
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-150"
+            onchange="validateFileSize(this)">
+          <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, JPEG (maks. 1MB)</p>
         </div>
 
         <!-- Submit Button -->
         <div class="pt-2">
-          <button type="submit"
+          <button type="submit" id="submitBtn"
             class="w-full md:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200 ease-in-out transform hover:scale-105">
             Save Report
           </button>
@@ -145,7 +147,7 @@ include __DIR__ . '/header.php';
       <!-- Policy Note -->
       <div class="mt-8 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
         <p class="text-sm text-indigo-800 font-medium">
-          📌 <strong>Policy:</strong> Minimal 2 laporan per hari. Target bulanan: 50–88 item.
+          📌 <strong>Policy:</strong> Minimum 2 reports per day. Monthly Target: 50–88 item.
         </p>
       </div>
     </div>
@@ -154,4 +156,77 @@ include __DIR__ . '/header.php';
 </body>
 </html>
 
+<script>
+   // Ambil form
+    const form = document.querySelector('form');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault(); // Cegah submit langsung
+
+      const fileInput = form.querySelector('input[name="proof_image"]');
+      const file = fileInput.files[0];
+      const maxSize = 1048576; // 1 MB
+
+      // Validasi file
+      if (file) {
+        if (file.size > maxSize) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Ukuran file terlalu besar!',
+            text: 'Maksimal 1 MB.',
+            confirmButtonText: 'Oke'
+          });
+          return;
+        }
+
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Format tidak didukung!',
+            text: 'Gunakan JPG, PNG, atau WebP.',
+            confirmButtonText: 'Oke'
+          });
+          return;
+        }
+      }
+
+      // Konfirmasi submit
+      Swal.fire({
+        title: 'Apakah data sudah benar?',
+        text: "Anda akan mengunggah laporan ini.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Simpan',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#4f46e5',
+        cancelButtonColor: '#d946ef'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Sedang menyimpan...';
+          form.submit(); // Submit form
+        }
+      });
+    });
+
+    // Optional: Preview gambar
+    document.querySelector('input[name="proof_image"]').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function () {
+          Swal.fire({
+            title: 'Pratinjau Gambar',
+            imageUrl: reader.result,
+            imageAlt: 'Preview',
+            confirmButtonText: 'Tutup',
+            width: 500
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+</script>
 <?php include __DIR__ . '/footer.php'; ?>

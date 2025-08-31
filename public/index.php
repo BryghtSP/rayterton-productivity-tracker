@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-card bg-white rounded-xl p-8">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-2">Rayterton Tracker</h1>
-        <p class="text-gray-600">Masuk ke akun Anda</p>
+        <p class="text-gray-600">Productivity System Login</p>
       </div>
 
       <?php if(isset($error)): ?>
@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div>
           <button type="submit" 
                   class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
-            Masuk
+            Sign In
           </button>
         </div>
       </form>

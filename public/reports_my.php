@@ -147,17 +147,17 @@ include __DIR__ . '/header.php';
                     <button
                       onclick="markAsDone(<?php echo $r['report_id']; ?>, this)"
                       class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">
-                      Tandai Selesai
+                      Mark Complete
                     </button>
                   <?php else: ?>
-                    <span class="text-gray-400 text-sm">Selesai</span>
+                    <span class="text-gray-400 text-sm">Complete</span>
                   <?php endif; ?>
 
                   <button
                     onclick="deleteReport(<?php echo $r['report_id']; ?>, this)"
                     class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
                     title="Hapus laporan">
-                    Hapus
+                    Delete
                   </button>
                 </td>
               </tr>
