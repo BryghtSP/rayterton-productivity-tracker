@@ -22,6 +22,16 @@ if (empty($title) || empty($report_date) || $job_type_id <= 0) {
     die("Data tidak lengkap.");
 }
 
+// Ambil nama job_type dari ID
+$stmt_lookup = $pdo->prepare("SELECT name FROM job_type WHERE job_type_id = ?");
+$stmt_lookup->execute([$job_type_id]);
+$job_type_row = $stmt_lookup->fetch();
+
+if (!$job_type_row) {
+    die("Jenis pekerjaan tidak valid.");
+}
+$job_type = $job_type_row['name']; // Simpan nama ke variabel $job_type
+
 // Upload & Kompres Gambar
 $proof_image_path = null;
 $max_size = 1048576; // 1 MB
@@ -58,15 +68,14 @@ if (isset($_FILES['proof_image']) && $_FILES['proof_image']['error'] === UPLOAD_
         case 'image/jpeg':
         case 'image/jpg':
             $image = imagecreatefromjpeg($file['tmp_name']);
-            $success = imagejpeg($image, $target_path, 80); // 80% quality
+            $success = imagejpeg($image, $target_path, 80);
             break;
         case 'image/png':
             $image = imagecreatefrompng($file['tmp_name']);
-            // Hilangkan background transparan jika perlu
             $bg = imagecreatetruecolor(imagesx($image), imagesy($image));
             imagefill($bg, 0, 0, imagecolorallocate($bg, 255, 255, 255));
             imagecopy($bg, $image, 0, 0, 0, 0, imagesx($image), imagesy($image));
-            $success = imagejpeg($bg, $target_path, 80); // Konversi ke JPG untuk hemat ukuran
+            $success = imagejpeg($bg, $target_path, 80);
             imagedestroy($bg);
             break;
         case 'image/webp':
@@ -75,26 +84,26 @@ if (isset($_FILES['proof_image']) && $_FILES['proof_image']['error'] === UPLOAD_
             break;
     }
 
-    if ($image) imagedestroy($image);
+    if (isset($image)) imagedestroy($image);
 
     if (!$success) {
         die("Gagal memproses gambar.");
     }
 
-    $proof_image_path = '/uploads/' . $new_filename; // Simpan path relatif
+    $proof_image_path = '/uploads/' . $new_filename;
 }
 
-// Simpan ke database
+// ✅ Simpan ke database dengan job_type (string)
 try {
     $stmt = $pdo->prepare("
         INSERT INTO production_reports 
-        (user_id, report_date, job_type_id, title, description, status, proof_link, proof_image)
+        (user_id, report_date, job_type, title, description, status, proof_link, proof_image)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $user_id,
         $report_date,
-        $job_type_id,
+        $job_type,           // Nama job_type
         $title,
         $description,
         $status,
