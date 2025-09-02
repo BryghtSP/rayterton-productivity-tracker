@@ -44,15 +44,11 @@ if (!$employee) {
 
 $employee_id = $employee['employee_id'];
 
-// Cek apakah employee ini punya akses ke work_force ini
-$check = $pdo->prepare("
-    SELECT 1 FROM employees_workforce 
-    WHERE employee_id = ? AND workforce_id = ?
-");
-$check->execute([$employee_id, $workforce_id]);
-
+// Validasi: Pastikan workforce_id ada di tabel work_force
+$check = $pdo->prepare("SELECT 1 FROM work_force WHERE workforce_id = ?");
+$check->execute([$workforce_id]);
 if (!$check->fetch()) {
-    die("Anda tidak memiliki akses ke work_force ini.");
+    die("Work Force tidak valid.");
 }
 
 // Upload & Kompres Gambar
