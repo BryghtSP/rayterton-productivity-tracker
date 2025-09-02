@@ -37,17 +37,17 @@ $stmt1->execute([$user_id, $first_day_of_month, $last_day_of_month]);
 $monthly_report = $stmt1->fetch(PDO::FETCH_ASSOC);
 $total_monthly = (int)$monthly_report['total'];
 
-// Ambil aktivitas terbaru hari ini
 $stmt2 = $pdo->prepare("
     SELECT 
         pr.title, 
         pr.job_type, 
         pr.status,
-        wf.workforce_name,
+        COALESCE(wf.workforce_name, 'Tidak Ada') as workforce_name,
         pr.created_at 
     FROM production_reports pr
-    JOIN work_force wf ON pr.workforce_id = wf.workforce_id
-    WHERE pr.user_id = ? AND pr.report_date = ?
+    LEFT JOIN work_force wf ON pr.workforce_id = wf.workforce_id
+    WHERE pr.user_id = ? 
+      AND DATE(pr.report_date) = ?
     ORDER BY pr.created_at DESC 
     LIMIT 5
 ");

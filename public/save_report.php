@@ -16,6 +16,7 @@ $status = $_POST['status'] ?? 'Progress';
 $title = trim($_POST['title']);
 $description = trim($_POST['description']) ?: null;
 $proof_link = trim($_POST['proof_link']) ?: null;
+$workforce_id = (int)$_POST['workforce_id']; // ✅ Tambahkan workforce_id
 
 // Validasi input wajib
 if (empty($title) || empty($report_date) || $job_type_id <= 0) {
@@ -30,7 +31,29 @@ $job_type_row = $stmt_lookup->fetch();
 if (!$job_type_row) {
     die("Jenis pekerjaan tidak valid.");
 }
-$job_type = $job_type_row['name']; // Simpan nama ke variabel $job_type
+$job_type = $job_type_row['name'];
+
+// Validasi: Pastikan workforce_id dimiliki oleh user ini
+$employeeStmt = $pdo->prepare("SELECT employee_id FROM employees WHERE user_id = ?");
+$employeeStmt->execute([$user_id]);
+$employee = $employeeStmt->fetch();
+
+if (!$employee) {
+    die("Data karyawan tidak ditemukan.");
+}
+
+$employee_id = $employee['employee_id'];
+
+// Cek apakah employee ini punya akses ke work_force ini
+$check = $pdo->prepare("
+    SELECT 1 FROM employees_workforce 
+    WHERE employee_id = ? AND workforce_id = ?
+");
+$check->execute([$employee_id, $workforce_id]);
+
+if (!$check->fetch()) {
+    die("Anda tidak memiliki akses ke work_force ini.");
+}
 
 // Upload & Kompres Gambar
 $proof_image_path = null;
@@ -93,22 +116,23 @@ if (isset($_FILES['proof_image']) && $_FILES['proof_image']['error'] === UPLOAD_
     $proof_image_path = '/uploads/' . $new_filename;
 }
 
-// ✅ Simpan ke database dengan job_type (string)
+// ✅ Simpan ke database
 try {
     $stmt = $pdo->prepare("
         INSERT INTO production_reports 
-        (user_id, report_date, job_type, title, description, status, proof_link, proof_image)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (user_id, report_date, job_type, title, description, status, proof_link, proof_image, workforce_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $user_id,
         $report_date,
-        $job_type,           // Nama job_type
+        $job_type,
         $title,
         $description,
         $status,
         $proof_link,
-        $proof_image_path
+        $proof_image_path,
+        $workforce_id // ✅ Tambahkan di sini
     ]);
 
     header("Location: reports_my.php?success=report_saved");
