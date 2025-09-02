@@ -144,14 +144,50 @@ include __DIR__ . '/header.php';
                         <?= $attendance && $attendance['check_in'] ? 'Checked-in (' . $attendance['check_in'] . ')' : ($attendance && $attendance['status'] === 'Leave' ? 'Leave Taken' : 'Check-in') ?>
                     </button>
 
-                    <!-- Check-out -->
-                    <form method="post" class="flex-1">
-                        <button type="submit" name="check_out"
-                            class="w-full py-3 px-4 <?= !$attendance || !$attendance['check_in'] || $attendance['check_out'] ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700' ?> text-white font-medium rounded-lg transition"
-                            <?= !$attendance || !$attendance['check_in'] || $attendance['check_out'] ? 'disabled' : '' ?>>
-                            <?= $attendance && $attendance['check_out'] ? 'Checked-out (' . $attendance['check_out'] . ')' : 'Check-out' ?>
-                        </button>
-                    </form>
+               <!-- Checkout Button -->
+                <form method="post" id="checkoutForm" class="flex-1">
+                    <button type="button" id="btnCheckout"
+                        class="w-full py-3 px-4 <?= !$attendance || !$attendance['check_in'] || $attendance['check_out'] ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700' ?> text-white font-medium rounded-lg transition"
+                        <?= !$attendance || !$attendance['check_in'] || $attendance['check_out'] ? 'disabled' : '' ?>>
+                        <?= $attendance && $attendance['check_out'] ? 'Checked-out (' . $attendance['check_out'] . ')' : 'Check-out' ?>
+                    </button>
+                    <input type="hidden" name="check_out" value="1">
+                </form>
+
+                <!-- Modal Checkout -->
+                <div id="modalCheckout" class="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+                    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                        <h2 class="text-lg font-bold mb-4">Konfirmasi Check-out</h2>
+                        <p class="mb-4">Apakah kamu yakin ingin melakukan check-out sekarang?</p>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" id="closeModalCheckout" class="px-4 py-2 bg-gray-300 rounded-lg">Batal</button>
+                            <button type="button" id="confirmCheckout" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Ya, Checkout</button>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    const btnCheckout = document.getElementById('btnCheckout');
+                    const modalCheckout = document.getElementById('modalCheckout');
+                    const closeModalCheckout = document.getElementById('closeModalCheckout');
+                    const confirmCheckout = document.getElementById('confirmCheckout');
+                    const checkoutForm = document.getElementById('checkoutForm');
+
+                    btnCheckout?.addEventListener('click', () => {
+                        modalCheckout.classList.remove('hidden');
+                    });
+
+                    closeModalCheckout?.addEventListener('click', () => {
+                        modalCheckout.classList.add('hidden');
+                    });
+
+                    confirmCheckout?.addEventListener('click', () => {
+                        checkoutForm.submit(); // submit form setelah konfirmasi
+                    });
+                });
+                </script>
+
 
                     <!-- Leave -->
                     <button id="btnLeave" type="button" class="flex-1 w-full py-3 px-4 <?= ($attendance && $attendance['check_in']) ? 'bg-gray-300 cursor-not-allowed' : 'bg-yellow-500 hover:bg-yellow-600' ?> text-white font-medium rounded-lg transition"
