@@ -42,133 +42,141 @@ include __DIR__ . '/header.php';
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rayterton Prodtracker - Report My</title>
   <link rel="stylesheet" href="css/output.css">
 </head>
+
 <body>
   <div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
-  <!-- Summary Card -->
-  <div class="bg-white rounded-xl shadow-md overflow-hidden">
-    <div class="p-6 md:p-8">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">My Reports</h1>
-          <div class="flex items-center gap-4 mt-2">
-            <span class="text-base md:text-lg font-semibold text-indigo-600"><?php echo htmlspecialchars($month) ?></span>
-            <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-full">
-              Total: <?php echo (int)$total ?> item
-            </span>
+    <!-- Summary Card -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="p-6 md:p-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <div>
+            <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">My Reports</h1>
+            <div class="flex items-center gap-4 mt-2">
+              <span class="text-base md:text-lg font-semibold text-indigo-600"><?php echo htmlspecialchars($month) ?></span>
+              <span class="px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-medium rounded-full">
+                Total: <?php echo (int)$total ?> item
+              </span>
+            </div>
           </div>
+          <form class="flex flex-col sm:flex-row items-center gap-2">
+            <input type="month" name="month" value="<?php echo htmlspecialchars($month) ?>"
+              class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            <button type="submit" class="px-4 py-2 w-full md:w-[69px] bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+              Filter
+            </button>
+          </form>
         </div>
-        <form class="flex flex-col sm:flex-row items-center gap-2">
-          <input type="month" name="month" value="<?php echo htmlspecialchars($month) ?>"
-            class="px-3 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-          <button type="submit" class="px-4 py-2 w-full md:w-[69px] bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-            Filter
-          </button>
-        </form>
-      </div>
 
-      <div class="bg-indigo-50 p-4 rounded-lg mb-6">
-        <p class="text-sm text-indigo-800">
-          <span class="font-medium">Monthly Target:</span> 50–88 items (minimum 2 items per day)
-        </p>
-      </div>
+        <div class="bg-indigo-50 p-4 rounded-lg mb-6">
+          <p class="text-sm text-indigo-800">
+            <span class="font-medium">Monthly Target:</span> 50–88 items (minimum 2 items per day)
+          </p>
+        </div>
 
-      <div class="h-64">
-        <canvas id="chart"></canvas>
+        <div class="h-64">
+          <canvas id="chart"></canvas>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Reports Table -->
-  <div class="bg-white rounded-xl shadow-md overflow-hidden">
-    <div class="p-6 md:p-8">
-      <h2 class="text-xl font-bold text-gray-800 mb-6">Entry Details</h2>
+    <!-- Reports Table -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+      <div class="p-6 md:p-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Entry Details</h2>
 
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="text-left border-b border-gray-200">
-              <th class="pb-3 font-medium text-gray-600">Date</th>
-              <th class="pb-3 font-medium text-gray-600">Type</th>
-              <th class="pb-3 font-medium text-gray-600">Title</th>
-              <th class="pb-3 font-medium text-gray-600">Work Force</th>
-              <th class="pb-3 font-medium text-gray-600">Status</th>
-              <th class="pb-3 font-medium text-gray-600">Proof</th>
-              <th class="pb-3 font-medium text-gray-600">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <?php foreach ($rows as $r): ?>
-              <tr class="hover:bg-gray-50 transition" id="row-<?php echo $r['report_id']; ?>">
-                <td class="py-4 whitespace-nowrap text-sm text-gray-600">
-                  <?php echo htmlspecialchars($r['report_date']) ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
-                  <?php echo htmlspecialchars($r['job_type']) ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-sm text-gray-800">
-                  <?php echo htmlspecialchars($r['title']) ?>
-                </td>
-                <td class="py-4 whitespace-nowrap text-[10px] sm:text-sm font-medium text-gray-800">
-                  <?php echo htmlspecialchars($r['workforce_name'] ?? '-'); ?>
-                </td>
-                <td class="py-4 whitespace-nowrap">
-                  <span
-                    class="status-badge px-2.5 py-1 rounded-full text-xs font-medium 
-      <?php echo $r['status'] === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'; ?>"
-                    id="status-<?php echo $r['report_id']; ?>">
-                    <?php echo htmlspecialchars($r['status']); ?>
-                  </span>
-                </td>
-
-                <td class="py-4 whitespace-nowrap">
-                  <?php if ($r['proof_link']): ?>
-                    <a href="<?php echo htmlspecialchars($r['proof_link']) ?>" target="_blank"
-                      class="text-indigo-600 hover:text-indigo-800 text-sm font-medium hover:underline transition">
-                      Lihat
-                    </a>
-                  <?php elseif ($r['proof_image']): ?>
-                    <button onclick="openModal(<?php echo $r['report_id'] ?>)"
-                      class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm transition">
-                      See Picture
-                    </button>
-                  <?php else: ?>
-                    <span class="text-gray-400 text-sm">-</span>
-                  <?php endif; ?>
-                </td>
-
-                <td class="py-4 whitespace-nowrap space-x-1">
-                  <?php if ($r['status'] === 'Progress'): ?>
-                    <button
-                      onclick="markAsDone(<?php echo $r['report_id']; ?>, this)"
-                      class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">
-                      Mark Complete
-                    </button>
-                  <?php else: ?>
-                    <span class="text-gray-400 text-sm">Complete</span>
-                  <?php endif; ?>
-
-                  <button
-                    onclick="deleteReport(<?php echo $r['report_id']; ?>, this)"
-                    class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
-                    title="Hapus laporan">
-                    Delete
-                  </button>
-                </td>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="text-left border-b border-gray-200">
+                <th class="pb-3 font-medium text-gray-600">Date</th>
+                <th class="pb-3 font-medium text-gray-600">Type</th>
+                <th class="pb-3 font-medium text-gray-600">Title</th>
+                <th class="pb-3 font-medium text-gray-600">Work Force</th>
+                <th class="pb-3 font-medium text-gray-600">Status</th>
+                <th class="pb-3 font-medium text-gray-600">Proof</th>
+                <th class="pb-3 font-medium text-gray-600">Action</th>
               </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <?php foreach ($rows as $r): ?>
+                <tr class="hover:bg-gray-50 transition" id="row-<?php echo $r['report_id']; ?>">
+                  <td class="py-4 whitespace-nowrap text-sm text-gray-600">
+                    <?php echo htmlspecialchars($r['report_date']) ?>
+                  </td>
+                  <td class="py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                    <?php echo htmlspecialchars($r['job_type']) ?>
+                  </td>
+                  <td class="py-4 whitespace-nowrap text-sm text-gray-800">
+                    <?php echo htmlspecialchars($r['title']) ?>
+                  </td>
+                  <td class="py-4 whitespace-nowrap text-[10px] sm:text-sm font-medium text-gray-800">
+                    <?php echo htmlspecialchars($r['workforce_name'] ?? '-'); ?>
+                  </td>
+                  <td class="py-4 whitespace-nowrap">
+                    <span
+                      class="status-badge px-2.5 py-1 rounded-full text-xs font-medium 
+      <?php echo $r['status'] === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'; ?>"
+                      id="status-<?php echo $r['report_id']; ?>">
+                      <?php echo htmlspecialchars($r['status']); ?>
+                    </span>
+                  </td>
+
+                  <td class="py-4 whitespace-nowrap">
+                    <?php if ($r['proof_link']): ?>
+                      <a href="<?php echo htmlspecialchars($r['proof_link']) ?>" target="_blank"
+                        class="text-indigo-600 hover:text-indigo-800 text-sm font-medium hover:underline transition">
+                        Lihat
+                      </a>
+                    <?php elseif ($r['proof_image']): ?>
+                      <button onclick="openModal(<?php echo $r['report_id'] ?>)"
+                        class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm transition">
+                        See Picture
+                      </button>
+                    <?php else: ?>
+                      <span class="text-gray-400 text-sm">-</span>
+                    <?php endif; ?>
+                  </td>
+
+                  <td class="py-4 whitespace-nowrap space-x-1">
+                    <?php if ($r['status'] === 'Progress'): ?>
+                      <button
+                        onclick="markAsDone(<?php echo $r['report_id']; ?>, this)"
+                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition">
+                        Mark Complete
+                      </button>
+                    <?php else: ?>
+                      <span class="text-gray-400 text-sm">Complete</span>
+                    <?php endif; ?>
+
+                    <a href="edit_report.php?id=<?php echo $r['report_id']; ?>"
+                      class="px-3 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition">
+                      Edit
+                    </a>
+
+                    <button
+                      onclick="deleteReport(<?php echo $r['report_id']; ?>, this)"
+                      class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
+                      title="Hapus laporan">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
-</div>
 </body>
+
 </html>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -191,8 +199,19 @@ include __DIR__ . '/header.php';
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-      plugins: { legend: { display: false } }
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
     }
   });
 
@@ -313,7 +332,9 @@ include __DIR__ . '/header.php';
 
 <script>
   function openModal(reportId) {
-    fetch(`get_report_detail_user.php?id=${reportId}`, { credentials: 'same-origin' })
+    fetch(`get_report_detail_user.php?id=${reportId}`, {
+        credentials: 'same-origin'
+      })
       .then(r => r.text())
       .then(d => {
         document.getElementById('modalContent').innerHTML = d;
@@ -325,6 +346,7 @@ include __DIR__ . '/header.php';
         document.getElementById('modalContent').innerHTML = '<p class="text-red-600">Terjadi kesalahan saat memuat data</p>';
       });
   }
+
   function closeModal() {
     document.getElementById('reportModal').classList.add('hidden');
     document.body.style.overflow = 'auto';

@@ -140,7 +140,7 @@ include __DIR__ . '/header.php';
                     </span>
                   </td>
                   <td class="py-4 whitespace-nowrap">
-                    <?php if ($r['proof_link'] || $r['proof_image']): ?>
+                    <?php if ($r): ?>
                       <button onclick="openModal(<?php echo $r['report_id'] ?>)"
                         class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 text-sm transition">
                         Detail
