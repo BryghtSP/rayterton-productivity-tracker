@@ -143,14 +143,14 @@ include __DIR__ . '/header.php';
               Filter
             </button>
             <a href="export_excel.php?recap_type=<?= urlencode($recapType) ?>&date=<?= urlencode($date) ?>&month=<?= urlencode($month) ?>&notes=<?= urlencode($notesFilter) ?>"
-   class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-   Export Excel
-</a>
+              class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+              Export Excel
+            </a>
 
 
           </form>
-          
-          
+
+
 
 
 
@@ -164,7 +164,6 @@ include __DIR__ . '/header.php';
                 <tr class="text-left border-b border-gray-200">
                   <th class="pb-3 font-medium text-gray-600">Name</th>
                   <th class="pb-3 font-medium text-gray-600">Email</th>
-                  <th class="pb-3 font-medium text-gray-600">Shift</th>
                   <th class="pb-3 font-medium text-gray-600">Check-in</th>
                   <th class="pb-3 font-medium text-gray-600">Check-out</th>
                   <th class="pb-3 font-medium text-gray-600">Status</th>
@@ -177,7 +176,6 @@ include __DIR__ . '/header.php';
                   <tr class="hover:bg-gray-50 transition">
                     <td class="py-4 text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
                     <td class="py-4 text-sm text-gray-600"><?= htmlspecialchars($record['email']) ?></td>
-                    <td class="py-4 text-sm text-gray-600"><?= htmlspecialchars($record['shift']) ?></td>
                     <td class="py-4 text-sm"><?= $record['check_in'] ?? '-' ?></td>
                     <td class="py-4 text-sm"><?= $record['check_out'] ?? '-' ?></td>
                     <td class="py-4 text-sm"><?= htmlspecialchars($record['status']) ?></td>
@@ -187,14 +185,12 @@ include __DIR__ . '/header.php';
                 <?php endforeach; ?>
               </tbody>
 
+
             <?php else: ?>
               <!-- Monthly Table -->
               <thead>
                 <tr class="text-left border-b border-gray-200">
                   <th class="pb-3 font-medium text-gray-600">Name</th>
-                  <th class="pb-3 font-medium text-gray-600 text-center">Shift Pagi</th>
-                  <th class="pb-3 font-medium text-gray-600 text-center">Shift Siang</th>
-                  <th class="pb-3 font-medium text-gray-600 text-center">Invalid</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Telat</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Izin</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Sakit</th>
@@ -204,9 +200,6 @@ include __DIR__ . '/header.php';
                 <?php foreach ($monthly as $record): ?>
                   <tr class="hover:bg-gray-50 transition">
                     <td class="py-4 text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
-                    <td class="py-4 text-sm text-center text-green-600"><?= $record['hadir_shift_pagi'] ?? 0 ?></td>
-                    <td class="py-4 text-sm text-center text-blue-600"><?= $record['hadir_shift_siang'] ?? 0 ?></td>
-                    <td class="py-4 text-sm text-center text-orange-600"><?= $record['hadir_invalid'] ?? 0 ?></td>
                     <td class="py-4 text-sm text-center text-yellow-600"><?= $record['telat'] ?? 0 ?></td>
                     <td class="py-4 text-sm text-center text-indigo-600"><?= $record['izin'] ?? 0 ?></td>
                     <td class="py-4 text-sm text-center text-purple-600"><?= $record['sakit'] ?? 0 ?></td>

@@ -144,49 +144,49 @@ include __DIR__ . '/header.php';
                         <?= $attendance && $attendance['check_in'] ? 'Checked-in (' . $attendance['check_in'] . ')' : ($attendance && $attendance['status'] === 'Leave' ? 'Leave Taken' : 'Check-in') ?>
                     </button>
 
-               <!-- Checkout Button -->
-                <form method="post" id="checkoutForm" class="flex-1">
-                    <button type="button" id="btnCheckout"
-                        class="w-full py-3 px-4 <?= !$attendance || !$attendance['check_in'] || $attendance['check_out'] ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700' ?> text-white font-medium rounded-lg transition"
-                        <?= !$attendance || !$attendance['check_in'] || $attendance['check_out'] ? 'disabled' : '' ?>>
-                        <?= $attendance && $attendance['check_out'] ? 'Checked-out (' . $attendance['check_out'] . ')' : 'Check-out' ?>
-                    </button>
-                    <input type="hidden" name="check_out" value="1">
-                </form>
+                    <!-- Checkout Button -->
+                    <form method="post" id="checkoutForm" class="flex-1">
+                        <button type="button" id="btnCheckout"
+                            class="w-full py-3 px-4 <?= !$attendance || !$attendance['check_in'] || $attendance['check_out'] ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700' ?> text-white font-medium rounded-lg transition"
+                            <?= !$attendance || !$attendance['check_in'] || $attendance['check_out'] ? 'disabled' : '' ?>>
+                            <?= $attendance && $attendance['check_out'] ? 'Checked-out (' . $attendance['check_out'] . ')' : 'Check-out' ?>
+                        </button>
+                        <input type="hidden" name="check_out" value="1">
+                    </form>
 
-                <!-- Modal Checkout -->
-                <div id="modalCheckout" class="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50 hidden">
-                    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-                        <h2 class="text-lg font-bold mb-4">Konfirmasi Check-out</h2>
-                        <p class="mb-4">Apakah kamu yakin ingin melakukan check-out sekarang?</p>
-                        <div class="flex justify-end gap-2">
-                            <button type="button" id="closeModalCheckout" class="px-4 py-2 bg-gray-300 rounded-lg">Batal</button>
-                            <button type="button" id="confirmCheckout" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Ya, Checkout</button>
+                    <!-- Modal Checkout -->
+                    <div id="modalCheckout" class="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+                        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                            <h2 class="text-lg font-bold mb-4">Konfirmasi Check-out</h2>
+                            <p class="mb-4">Apakah kamu yakin ingin melakukan check-out sekarang?</p>
+                            <div class="flex justify-end gap-2">
+                                <button type="button" id="closeModalCheckout" class="px-4 py-2 bg-gray-300 rounded-lg">Batal</button>
+                                <button type="button" id="confirmCheckout" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Ya, Checkout</button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <script>
-                document.addEventListener("DOMContentLoaded", function() {
-                    const btnCheckout = document.getElementById('btnCheckout');
-                    const modalCheckout = document.getElementById('modalCheckout');
-                    const closeModalCheckout = document.getElementById('closeModalCheckout');
-                    const confirmCheckout = document.getElementById('confirmCheckout');
-                    const checkoutForm = document.getElementById('checkoutForm');
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            const btnCheckout = document.getElementById('btnCheckout');
+                            const modalCheckout = document.getElementById('modalCheckout');
+                            const closeModalCheckout = document.getElementById('closeModalCheckout');
+                            const confirmCheckout = document.getElementById('confirmCheckout');
+                            const checkoutForm = document.getElementById('checkoutForm');
 
-                    btnCheckout?.addEventListener('click', () => {
-                        modalCheckout.classList.remove('hidden');
-                    });
+                            btnCheckout?.addEventListener('click', () => {
+                                modalCheckout.classList.remove('hidden');
+                            });
 
-                    closeModalCheckout?.addEventListener('click', () => {
-                        modalCheckout.classList.add('hidden');
-                    });
+                            closeModalCheckout?.addEventListener('click', () => {
+                                modalCheckout.classList.add('hidden');
+                            });
 
-                    confirmCheckout?.addEventListener('click', () => {
-                        checkoutForm.submit(); // submit form setelah konfirmasi
-                    });
-                });
-                </script>
+                            confirmCheckout?.addEventListener('click', () => {
+                                checkoutForm.submit(); // submit form setelah konfirmasi
+                            });
+                        });
+                    </script>
 
 
                     <!-- Leave -->
@@ -291,7 +291,7 @@ include __DIR__ . '/header.php';
                                 <thead>
                                     <tr class="text-left border-b border-gray-200">
                                         <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Date</th>
-                                        <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Shift</th>
+                                        <!-- Hilangkan kolom Shift -->
                                         <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Check-in</th>
                                         <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Check-out</th>
                                         <th class="text-sm sm:text-[16px] pb-3 font-medium text-gray-600">Status</th>
@@ -303,12 +303,12 @@ include __DIR__ . '/header.php';
                                     <?php foreach ($monthly as $record): ?>
                                         <tr class="hover:bg-gray-50 transition">
                                             <td class="py-4 whitespace-nowrap text-sm text-gray-600"><?= htmlspecialchars($record['date']) ?></td>
-                                            <td class="py-4 whitespace-nowrap text-sm font-medium"><?= htmlspecialchars($record['shift'] ?? '-') ?></td>
+                                            <!-- Hilangkan kolom Shift -->
                                             <td class="py-4 whitespace-nowrap text-sm font-medium"><?= $record['check_in'] ?? '-' ?></td>
                                             <td class="py-4 whitespace-nowrap text-sm font-medium"><?= $record['check_out'] ?? '-' ?></td>
                                             <td class="py-4 whitespace-nowrap">
                                                 <span class="px-2.5 py-1 rounded-full text-xs font-medium 
-<?= $record['status'] === 'Present' ? 'bg-green-100 text-green-800' : ($record['status'] === 'Late' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') ?>">
+                            <?= $record['status'] === 'Present' ? 'bg-green-100 text-green-800' : ($record['status'] === 'Late' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') ?>">
                                                     <?= htmlspecialchars($record['status']) ?>
                                                 </span>
                                             </td>

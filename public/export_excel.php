@@ -31,10 +31,10 @@ if ($recapType === 'daily') {
     $stmt->execute($params);
     $rows = $stmt->fetchAll();
 
+    // === TANPA kolom Shift ===
     echo "<tr>
             <th>Name</th>
             <th>Email</th>
-            <th>Shift</th>
             <th>Check-in</th>
             <th>Check-out</th>
             <th>Status</th>
@@ -45,7 +45,6 @@ if ($recapType === 'daily') {
         echo "<tr>
                 <td>".htmlspecialchars($r['name'])."</td>
                 <td>".htmlspecialchars($r['email'])."</td>
-                <td>".htmlspecialchars($r['shift'])."</td>
                 <td>".($r['check_in'] ?? '-')."</td>
                 <td>".($r['check_out'] ?? '-')."</td>
                 <td>".htmlspecialchars($r['status'])."</td>
@@ -76,11 +75,9 @@ if ($recapType === 'daily') {
     $stmt->execute([$start, $end]);
     $rows = $stmt->fetchAll();
 
+    // === TANPA kolom Shift Pagi / Siang / Invalid ===
     echo "<tr>
             <th>Name</th>
-            <th>Shift Pagi</th>
-            <th>Shift Siang</th>
-            <th>Invalid</th>
             <th>Telat</th>
             <th>Izin</th>
             <th>Sakit</th>
@@ -88,9 +85,6 @@ if ($recapType === 'daily') {
     foreach ($rows as $r) {
         echo "<tr>
                 <td>".htmlspecialchars($r['name'])."</td>
-                <td>".$r['hadir_shift_pagi']."</td>
-                <td>".$r['hadir_shift_siang']."</td>
-                <td>".$r['hadir_invalid']."</td>
                 <td>".$r['telat']."</td>
                 <td>".$r['izin']."</td>
                 <td>".$r['sakit']."</td>
