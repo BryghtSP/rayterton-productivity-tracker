@@ -25,6 +25,13 @@ $countDaily->execute($paramsDaily);
 $totalDaily = (int)$countDaily->fetchColumn();
 $totalDailyPages = ceil($totalDaily / $limitDaily);
 
+// Hitung startPage dan endPage untuk daily pagination
+$dailyStartPage = max(1, $dailyPage - 2);
+$dailyEndPage = min($totalDailyPages, $dailyStartPage + 4);
+if ($dailyEndPage - $dailyStartPage < 4) {
+    $dailyStartPage = max(1, $dailyEndPage - 4);
+}
+
 // Ambil data daily
 $sqlDaily = "
     SELECT a.*, u.name, u.email 
@@ -56,6 +63,13 @@ $countMonthly = $pdo->query("SELECT COUNT(*) FROM users WHERE is_active = 1");
 $totalMonthly = (int)$countMonthly->fetchColumn();
 $totalMonthlyPages = ceil($totalMonthly / $limitMonthly);
 
+// Hitung startPage dan endPage untuk monthly pagination
+$monthlyStartPage = max(1, $monthlyPage - 2);
+$monthlyEndPage = min($totalMonthlyPages, $monthlyStartPage + 4);
+if ($monthlyEndPage - $monthlyStartPage < 4) {
+    $monthlyStartPage = max(1, $monthlyEndPage - 4);
+}
+
 $stmt = $pdo->prepare("
     SELECT u.user_id, u.name, 
            SUM(CASE 
@@ -83,11 +97,8 @@ $stmt = $pdo->prepare("
 $stmt->execute([$start, $end]);
 $monthly = $stmt->fetchAll();
 
-
-
 include __DIR__ . '/header.php';
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -107,9 +118,10 @@ include __DIR__ . '/header.php';
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h1 class="text-2xl font-bold text-gray-800">Attendance Recap</h1>
 
-
           <!-- Filter Form -->
           <form class="flex flex-col sm:flex-row items-center gap-2" method="get">
+            <input type="hidden" name="recap_type" value="<?= $recapType ?>">
+            
             <select name="recap_type"
               onchange="this.form.submit()"
               class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
@@ -118,9 +130,13 @@ include __DIR__ . '/header.php';
             </select>
 
             <?php if ($recapType === 'daily'): ?>
+              <!-- Daily filter: Date -->
+              <input type="date" name="date"
+                value="<?= htmlspecialchars($date) ?>"
+                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              
               <!-- Daily filter: Notes -->
               <select name="notes"
-                onchange="this.form.submit()"
                 class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                 <option value="">-- All Notes --</option>
                 <option value="Morning" <?= $notesFilter === 'Morning' ? 'selected' : '' ?>>Pagi</option>
@@ -134,7 +150,6 @@ include __DIR__ . '/header.php';
               <!-- Monthly filter: Month -->
               <input type="month" name="month"
                 value="<?= htmlspecialchars($month) ?>"
-                onchange="this.form.submit()"
                 class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
             <?php endif; ?>
 
@@ -146,14 +161,7 @@ include __DIR__ . '/header.php';
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
               Export Excel
             </a>
-
-
           </form>
-
-
-
-
-
         </div>
 
         <div class="overflow-x-auto">
@@ -172,19 +180,24 @@ include __DIR__ . '/header.php';
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
-                <?php foreach ($daily as $record): ?>
-                  <tr class="hover:bg-gray-50 transition">
-                    <td class="py-4 text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
-                    <td class="py-4 text-sm text-gray-600"><?= htmlspecialchars($record['email']) ?></td>
-                    <td class="py-4 text-sm"><?= $record['check_in'] ?? '-' ?></td>
-                    <td class="py-4 text-sm"><?= $record['check_out'] ?? '-' ?></td>
-                    <td class="py-4 text-sm"><?= htmlspecialchars($record['status']) ?></td>
-                    <td class="py-4 text-sm"><?= htmlspecialchars($record['location'] ?? '-') ?></td>
-                    <td class="py-4 text-sm"><?= !empty($record['notes']) ? htmlspecialchars($record['notes']) : '-' ?></td>
+                <?php if (count($daily) > 0): ?>
+                  <?php foreach ($daily as $record): ?>
+                    <tr class="hover:bg-gray-50 transition">
+                      <td class="py-4 text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
+                      <td class="py-4 text-sm text-gray-600"><?= htmlspecialchars($record['email']) ?></td>
+                      <td class="py-4 text-sm"><?= $record['check_in'] ?? '-' ?></td>
+                      <td class="py-4 text-sm"><?= $record['check_out'] ?? '-' ?></td>
+                      <td class="py-4 text-sm"><?= htmlspecialchars($record['status']) ?></td>
+                      <td class="py-4 text-sm"><?= htmlspecialchars($record['location'] ?? '-') ?></td>
+                      <td class="py-4 text-sm"><?= !empty($record['notes']) ? htmlspecialchars($record['notes']) : '-' ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php else: ?>
+                  <tr>
+                    <td colspan="7" class="py-4 text-center text-gray-500">No attendance records found for this date.</td>
                   </tr>
-                <?php endforeach; ?>
+                <?php endif; ?>
               </tbody>
-
 
             <?php else: ?>
               <!-- Monthly Table -->
@@ -197,37 +210,184 @@ include __DIR__ . '/header.php';
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
-                <?php foreach ($monthly as $record): ?>
-                  <tr class="hover:bg-gray-50 transition">
-                    <td class="py-4 text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
-                    <td class="py-4 text-sm text-center text-yellow-600"><?= $record['telat'] ?? 0 ?></td>
-                    <td class="py-4 text-sm text-center text-indigo-600"><?= $record['izin'] ?? 0 ?></td>
-                    <td class="py-4 text-sm text-center text-purple-600"><?= $record['sakit'] ?? 0 ?></td>
+                <?php if (count($monthly) > 0): ?>
+                  <?php foreach ($monthly as $record): ?>
+                    <tr class="hover:bg-gray-50 transition">
+                      <td class="py-4 text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
+                      <td class="py-4 text-sm text-center text-yellow-600"><?= $record['telat'] ?? 0 ?></td>
+                      <td class="py-4 text-sm text-center text-indigo-600"><?= $record['izin'] ?? 0 ?></td>
+                      <td class="py-4 text-sm text-center text-purple-600"><?= $record['sakit'] ?? 0 ?></td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php else: ?>
+                  <tr>
+                    <td colspan="4" class="py-4 text-center text-gray-500">No monthly records found.</td>
                   </tr>
-                <?php endforeach; ?>
+                <?php endif; ?>
               </tbody>
             <?php endif; ?>
           </table>
         </div>
 
-        <!-- Pagination -->
+        <!-- Pagination Daily -->
         <?php if ($recapType === 'daily' && $totalDailyPages > 1): ?>
-          <div class="mt-4 flex gap-2">
-            <?php for ($i = 1; $i <= $totalDailyPages; $i++): ?>
-              <a href="?recap_type=daily&date=<?= urlencode($date) ?>&daily_page=<?= $i ?>"
-                class="px-3 py-1 rounded <?= $i == $dailyPage ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700' ?>">
-                <?= $i ?>
-              </a>
-            <?php endfor; ?>
+          <div class="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+            <div class="text-sm text-gray-600 whitespace-nowrap">
+              Page <?= $dailyPage ?> of <?= $totalDailyPages ?>
+            </div>
+            <nav class="flex flex-wrap justify-center gap-1">
+              <!-- First Page Button -->
+              <?php if ($dailyPage > 1): ?>
+                <a href="?recap_type=daily&date=<?= htmlspecialchars($date) ?>&notes=<?= htmlspecialchars($notesFilter) ?>&daily_page=1"
+                  class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt;&lt; First</span>
+                  <span class="sm:hidden">First</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt;&lt; First</span>
+                  <span class="sm:hidden">First</span>
+                </span>
+              <?php endif; ?>
+
+              <!-- Previous Button -->
+              <?php if ($dailyPage > 1): ?>
+                <a href="?recap_type=daily&date=<?= htmlspecialchars($date) ?>&notes=<?= htmlspecialchars($notesFilter) ?>&daily_page=<?= $dailyPage - 1 ?>"
+                  class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt; Prev</span>
+                  <span class="sm:hidden">&lt;</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt; Prev</span>
+                  <span class="sm:hidden">&lt;</span>
+                </span>
+              <?php endif; ?>
+
+              <!-- Page Numbers -->
+              <div class="hidden xs:flex gap-1">
+                <?php for ($i = $dailyStartPage; $i <= $dailyEndPage; $i++): ?>
+                  <a href="?recap_type=daily&date=<?= htmlspecialchars($date) ?>&notes=<?= htmlspecialchars($notesFilter) ?>&daily_page=<?= $i ?>"
+                    class="<?= $i === $dailyPage ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50' ?> px-3 py-2 border border-gray-300 rounded text-sm font-medium transition">
+                    <?= $i ?>
+                  </a>
+                <?php endfor; ?>
+              </div>
+
+              <!-- Page indicator for mobile -->
+              <div class="xs:hidden px-3 py-2 bg-indigo-600 text-white border border-gray-300 rounded text-sm font-medium">
+                <?= $dailyPage ?>
+              </div>
+
+              <!-- Next Button -->
+              <?php if ($dailyPage < $totalDailyPages): ?>
+                <a href="?recap_type=daily&date=<?= htmlspecialchars($date) ?>&notes=<?= htmlspecialchars($notesFilter) ?>&daily_page=<?= $dailyPage + 1 ?>"
+                  class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">Next &gt;</span>
+                  <span class="sm:hidden">&gt;</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">Next &gt;</span>
+                  <span class="sm:hidden">&gt;</span>
+                </span>
+              <?php endif; ?>
+
+              <!-- Last Page Button -->
+              <?php if ($dailyPage < $totalDailyPages): ?>
+                <a href="?recap_type=daily&date=<?= htmlspecialchars($date) ?>&notes=<?= htmlspecialchars($notesFilter) ?>&daily_page=<?= $totalDailyPages ?>"
+                  class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">Last &gt;&gt;</span>
+                  <span class="sm:hidden">Last</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">Last &gt;&gt;</span>
+                  <span class="sm:hidden">Last</span>
+                </span>
+              <?php endif; ?>
+            </nav>
           </div>
-        <?php elseif ($recapType === 'monthly' && $totalMonthlyPages > 1): ?>
-          <div class="mt-4 flex gap-2">
-            <?php for ($i = 1; $i <= $totalMonthlyPages; $i++): ?>
-              <a href="?recap_type=monthly&month=<?= urlencode($month) ?>&monthly_page=<?= $i ?>"
-                class="px-3 py-1 rounded <?= $i == $monthlyPage ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700' ?>">
-                <?= $i ?>
-              </a>
-            <?php endfor; ?>
+        <?php endif; ?>
+
+        <!-- Pagination Monthly -->
+        <?php if ($recapType === 'monthly' && $totalMonthlyPages > 1): ?>
+          <div class="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+            <div class="text-sm text-gray-600 whitespace-nowrap">
+              Page <?= $monthlyPage ?> of <?= $totalMonthlyPages ?>
+            </div>
+            <nav class="flex flex-wrap justify-center gap-1">
+              <!-- First Page Button -->
+              <?php if ($monthlyPage > 1): ?>
+                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=1"
+                  class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt;&lt; First</span>
+                  <span class="sm:hidden">First</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt;&lt; First</span>
+                  <span class="sm:hidden">First</span>
+                </span>
+              <?php endif; ?>
+
+              <!-- Previous Button -->
+              <?php if ($monthlyPage > 1): ?>
+                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=<?= $monthlyPage - 1 ?>"
+                  class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt; Prev</span>
+                  <span class="sm:hidden">&lt;</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">&lt; Prev</span>
+                  <span class="sm:hidden">&lt;</span>
+                </span>
+              <?php endif; ?>
+
+              <!-- Page Numbers -->
+              <div class="hidden xs:flex gap-1">
+                <?php for ($i = $monthlyStartPage; $i <= $monthlyEndPage; $i++): ?>
+                  <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=<?= $i ?>"
+                    class="<?= $i === $monthlyPage ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50' ?> px-3 py-2 border border-gray-300 rounded text-sm font-medium transition">
+                    <?= $i ?>
+                  </a>
+                <?php endfor; ?>
+              </div>
+
+              <!-- Page indicator for mobile -->
+              <div class="xs:hidden px-3 py-2 bg-indigo-600 text-white border border-gray-300 rounded text-sm font-medium">
+                <?= $monthlyPage ?>
+              </div>
+
+              <!-- Next Button -->
+              <?php if ($monthlyPage < $totalMonthlyPages): ?>
+                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=<?= $monthlyPage + 1 ?>"
+                  class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">Next &gt;</span>
+                  <span class="sm:hidden">&gt;</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">Next &gt;</span>
+                  <span class="sm:hidden">&gt;</span>
+                </span>
+              <?php endif; ?>
+
+              <!-- Last Page Button -->
+              <?php if ($monthlyPage < $totalMonthlyPages): ?>
+                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=<?= $totalMonthlyPages ?>"
+                  class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
+                  <span class="hidden sm:inline">Last &gt;&gt;</span>
+                  <span class="sm:hidden">Last</span>
+                </a>
+              <?php else: ?>
+                <span class="px-2 py-2 sm:px-3 bg-gray-100 text-gray-400 border border-gray-300 rounded text-sm font-medium cursor-not-allowed whitespace-nowrap">
+                  <span class="hidden sm:inline">Last &gt;&gt;</span>
+                  <span class="sm:hidden">Last</span>
+                </span>
+              <?php endif; ?>
+            </nav>
           </div>
         <?php endif; ?>
       </div>
