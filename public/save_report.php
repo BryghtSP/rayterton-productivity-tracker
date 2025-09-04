@@ -109,7 +109,7 @@ if (isset($_FILES['proof_image']) && $_FILES['proof_image']['error'] === UPLOAD_
         die("Gagal memproses gambar.");
     }
 
-    $proof_image_path = '/uploads/' . $new_filename;
+    $proof_image_path = '../uploads/' . $new_filename;
 }
 
 // ✅ Simpan ke database
