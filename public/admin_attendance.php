@@ -177,6 +177,7 @@ include __DIR__ . '/header.php';
                   <th class="pb-3 font-medium text-gray-600">Status</th>
                   <th class="pb-3 font-medium text-gray-600">Location</th>
                   <th class="pb-3 font-medium text-gray-600">Notes</th>
+                  <th class="pb-3 font-medium text-gray-600">Explanation</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
@@ -190,6 +191,7 @@ include __DIR__ . '/header.php';
                       <td class="py-4 text-sm"><?= htmlspecialchars($record['status']) ?></td>
                       <td class="py-4 text-sm"><?= htmlspecialchars($record['location'] ?? '-') ?></td>
                       <td class="py-4 text-sm"><?= !empty($record['notes']) ? htmlspecialchars($record['notes']) : '-' ?></td>
+                      <td class="py-4 text-sm"><?= htmlspecialchars($record['explanation'] ?? '-') ?></td>
                     </tr>
                   <?php endforeach; ?>
                 <?php else: ?>
