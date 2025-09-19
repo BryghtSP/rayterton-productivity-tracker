@@ -6,7 +6,35 @@ require_admin();
 $recapType = $_GET['recap_type'] ?? 'daily'; // default daily
 $date = $_GET['date'] ?? date('Y-m-d');
 $month = $_GET['month'] ?? date('Y-m');
-$notesFilter = $_GET['notes'] ?? ''; // ambil filter notes
+
+// Validasi notes sesuai format database: "Hadir: WFH", "Late: WFO", dll.
+$validNotes = [
+  '',
+  'Hadir: Morning',
+  'Hadir: Afternoon',
+  'Hadir: WFH',
+  'Hadir: WFO',
+  'Hadir: WAC',
+  'Hadir: WFA',
+  'Late: Morning',
+  'Late: Afternoon',
+  'Late: WFH',
+  'Late: WFO',
+  'Late: WAC',
+  'Late: WFA'
+];
+$notesFilter = in_array($_GET['notes'] ?? '', $validNotes) ? ($_GET['notes'] ?? '') : '';
+
+// Fungsi bantu URL pagination daily
+function buildDailyUrl($page, $date, $notes)
+{
+  return '?' . http_build_query([
+    'recap_type' => 'daily',
+    'date' => $date,
+    'notes' => $notes,
+    'daily_page' => $page
+  ]);
+}
 
 // === DAILY LOGIC ===
 $limitDaily = 10;
@@ -29,7 +57,7 @@ $totalDailyPages = ceil($totalDaily / $limitDaily);
 $dailyStartPage = max(1, $dailyPage - 2);
 $dailyEndPage = min($totalDailyPages, $dailyStartPage + 4);
 if ($dailyEndPage - $dailyStartPage < 4) {
-    $dailyStartPage = max(1, $dailyEndPage - 4);
+  $dailyStartPage = max(1, $dailyEndPage - 4);
 }
 
 // Ambil data daily
@@ -67,24 +95,27 @@ $totalMonthlyPages = ceil($totalMonthly / $limitMonthly);
 $monthlyStartPage = max(1, $monthlyPage - 2);
 $monthlyEndPage = min($totalMonthlyPages, $monthlyStartPage + 4);
 if ($monthlyEndPage - $monthlyStartPage < 4) {
-    $monthlyStartPage = max(1, $monthlyEndPage - 4);
+  $monthlyStartPage = max(1, $monthlyEndPage - 4);
 }
 
 $stmt = $pdo->prepare("
     SELECT u.user_id, u.name, 
            SUM(CASE 
-               WHEN a.status = 'Hadir' AND TIME(a.check_in) <= '07:45:00' THEN 1 
+               WHEN a.status = 'Hadir' AND a.notes LIKE 'Hadir:%' AND TIME(a.check_in) <= '07:45:00' THEN 1 
                ELSE 0 
            END) as hadir_shift_pagi,
            SUM(CASE 
-               WHEN a.status = 'Hadir' AND TIME(a.check_in) > '07:45:00' AND TIME(a.check_in) <= '13:10:00' THEN 1 
+               WHEN a.status = 'Hadir' AND a.notes LIKE 'Hadir:%' AND TIME(a.check_in) > '07:45:00' AND TIME(a.check_in) <= '13:10:00' THEN 1 
                ELSE 0 
            END) as hadir_shift_siang,
            SUM(CASE 
-               WHEN a.status = 'Hadir' AND TIME(a.check_in) > '13:10:00' THEN 1 
+               WHEN a.status = 'Hadir' AND a.notes LIKE 'Hadir:%' AND TIME(a.check_in) > '13:10:00' THEN 1 
                ELSE 0 
            END) as hadir_invalid,
-           SUM(CASE WHEN a.status = 'Telat' THEN 1 ELSE 0 END) as telat,
+           SUM(CASE 
+               WHEN a.notes LIKE 'Late:%' THEN 1 
+               ELSE 0 
+           END) as telat,
            SUM(CASE WHEN a.status = 'Izin' THEN 1 ELSE 0 END) as izin,
            SUM(CASE WHEN a.status = 'Sakit' THEN 1 ELSE 0 END) as sakit
     FROM users u
@@ -121,7 +152,7 @@ include __DIR__ . '/header.php';
           <!-- Filter Form -->
           <form class="flex flex-col sm:flex-row items-center gap-2" method="get">
             <input type="hidden" name="recap_type" value="<?= $recapType ?>">
-            
+
             <select name="recap_type"
               onchange="this.form.submit()"
               class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
@@ -134,17 +165,25 @@ include __DIR__ . '/header.php';
               <input type="date" name="date"
                 value="<?= htmlspecialchars($date) ?>"
                 class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
-              
+
+              <!-- Daily filter: Notes -->
               <!-- Daily filter: Notes -->
               <select name="notes"
+                onchange="this.form.submit()"
                 class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                 <option value="">-- All Notes --</option>
-                <option value="Morning" <?= $notesFilter === 'Morning' ? 'selected' : '' ?>>Pagi</option>
-                <option value="Afternoon" <?= $notesFilter === 'Afternoon' ? 'selected' : '' ?>>Siang</option>
-                <option value="WFO" <?= $notesFilter === 'WFO' ? 'selected' : '' ?>>Whole Day at Office (WFO)</option>
-                <option value="WAC" <?= $notesFilter === 'WAC' ? 'selected' : '' ?>>Working at Client (WAC)</option>
-                <option value="WFH" <?= $notesFilter === 'WFH' ? 'selected' : '' ?>>Working from Home (WFH)</option>
-                <option value="WFA" <?= $notesFilter === 'WFA' ? 'selected' : '' ?>>Working from Anywhere (WFA)</option>
+                <option value="Hadir: Morning" <?= $notesFilter === 'Hadir: Morning' ? 'selected' : '' ?>>Hadir: Morning</option>
+                <option value="Hadir: Afternoon" <?= $notesFilter === 'Hadir: Afternoon' ? 'selected' : '' ?>>Hadir: Afternoon</option>
+                <option value="Hadir: WFH" <?= $notesFilter === 'Hadir: WFH' ? 'selected' : '' ?>>Hadir: WFH</option>
+                <option value="Hadir: WFO" <?= $notesFilter === 'Hadir: WFO' ? 'selected' : '' ?>>Hadir: WFO</option>
+                <option value="Hadir: WAC" <?= $notesFilter === 'Hadir: WAC' ? 'selected' : '' ?>>Hadir: WAC</option>
+                <option value="Hadir: WFA" <?= $notesFilter === 'Hadir: WFA' ? 'selected' : '' ?>>Hadir: WFA</option>
+                <option value="Late: Morning" <?= $notesFilter === 'Late: Morning' ? 'selected' : '' ?>>Late: Morning</option>
+                <option value="Late: Afternoon" <?= $notesFilter === 'Late: Afternoon' ? 'selected' : '' ?>>Late: Afternoon</option>
+                <option value="Late: WFH" <?= $notesFilter === 'Late: WFH' ? 'selected' : '' ?>>Late: WFH</option>
+                <option value="Late: WFO" <?= $notesFilter === 'Late: WFO' ? 'selected' : '' ?>>Late: WFO</option>
+                <option value="Late: WAC" <?= $notesFilter === 'Late: WAC' ? 'selected' : '' ?>>Late: WAC</option>
+                <option value="Late: WFA" <?= $notesFilter === 'Late: WFA' ? 'selected' : '' ?>>Late: WFA</option>
               </select>
             <?php else: ?>
               <!-- Monthly filter: Month -->
@@ -206,24 +245,31 @@ include __DIR__ . '/header.php';
               <thead>
                 <tr class="text-left border-b border-gray-200">
                   <th class="pb-3 font-medium text-gray-600">Name</th>
+                  <th class="pb-3 font-medium text-gray-600 text-center">Total Hadir</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Telat</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Izin</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Sakit</th>
+                  <th class="pb-3 font-medium text-gray-600 text-center">Total Absen</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <?php if (count($monthly) > 0): ?>
-                  <?php foreach ($monthly as $record): ?>
+                  <?php foreach ($monthly as $record):
+                    $totalHadir = ($record['hadir_shift_pagi'] ?? 0) + ($record['hadir_shift_siang'] ?? 0);
+                    $totalAbsen = ($record['telat'] ?? 0) + ($record['izin'] ?? 0) + ($record['sakit'] ?? 0);
+                  ?>
                     <tr class="hover:bg-gray-50 transition">
                       <td class="py-4 text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
+                      <td class="py-4 text-sm text-center font-bold text-green-700"><?= $totalHadir ?></td>
                       <td class="py-4 text-sm text-center text-yellow-600"><?= $record['telat'] ?? 0 ?></td>
                       <td class="py-4 text-sm text-center text-indigo-600"><?= $record['izin'] ?? 0 ?></td>
                       <td class="py-4 text-sm text-center text-purple-600"><?= $record['sakit'] ?? 0 ?></td>
+                      <td class="py-4 text-sm text-center font-bold text-red-600"><?= $totalAbsen ?></td>
                     </tr>
                   <?php endforeach; ?>
                 <?php else: ?>
                   <tr>
-                    <td colspan="4" class="py-4 text-center text-gray-500">No monthly records found.</td>
+                    <td colspan="6" class="py-4 text-center text-gray-500">No monthly records found.</td>
                   </tr>
                 <?php endif; ?>
               </tbody>

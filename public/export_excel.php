@@ -8,8 +8,27 @@ $date = $_GET['date'] ?? date('Y-m-d');
 $month = $_GET['month'] ?? date('Y-m');
 $notesFilter = $_GET['notes'] ?? '';
 
-header("Content-Type: application/vnd.ms-excel");
-header("Content-Disposition: attachment; filename=attendance_{$recapType}.xls");
+header("Content-Type: text/html");
+// Bangun nama file berdasarkan tipe dan tanggal/bulan
+$filename = "attendance_{$recapType}";
+
+if ($recapType === 'daily') {
+    $filename .= "_" . date('Y-m-d', strtotime($date)); // Format: 2025-04-05
+    // Optional: tambahkan notes jika ada
+    if (!empty($notesFilter)) {
+        // Sanitasi karakter agar aman untuk nama file
+        $sanitizedNotes = preg_replace('/[^a-zA-Z0-9_:]/', '_', $notesFilter);
+        $filename .= "_" . $sanitizedNotes;
+    }
+} else {
+    $filename .= "_" . $month; // Format: 2025-04
+}
+
+// Tambahkan ekstensi
+$filename .= ".html";
+
+// Set header
+header("Content-Disposition: attachment; filename=" . $filename);
 header("Pragma: no-cache");
 header("Expires: 0");
 
@@ -40,6 +59,7 @@ if ($recapType === 'daily') {
             <th>Status</th>
             <th>Location</th>
             <th>Notes</th>
+            <th>Explanation</th>
           </tr>";
     foreach ($rows as $r) {
         echo "<tr>
@@ -50,6 +70,7 @@ if ($recapType === 'daily') {
                 <td>".htmlspecialchars($r['status'])."</td>
                 <td>".htmlspecialchars($r['location'] ?? '-')."</td>
                 <td>".(!empty($r['notes']) ? htmlspecialchars($r['notes']) : '-')."</td>
+                <td>".htmlspecialchars($r['explanation'] ?? '-')."</td>
               </tr>";
     }
 
