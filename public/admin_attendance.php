@@ -167,7 +167,6 @@ include __DIR__ . '/header.php';
                 class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
 
               <!-- Daily filter: Notes -->
-              <!-- Daily filter: Notes -->
               <select name="notes"
                 onchange="this.form.submit()"
                 class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
@@ -219,6 +218,7 @@ include __DIR__ . '/header.php';
                   <th class="pb-3 font-medium text-gray-600">Explanation</th>
                 </tr>
               </thead>
+              <!-- Daily Table -->
               <tbody class="divide-y divide-gray-100">
                 <?php if (count($daily) > 0): ?>
                   <?php foreach ($daily as $record): ?>
@@ -230,12 +230,15 @@ include __DIR__ . '/header.php';
                       <td class="py-4 text-sm"><?= htmlspecialchars($record['status']) ?></td>
                       <td class="py-4 text-sm"><?= htmlspecialchars($record['location'] ?? '-') ?></td>
                       <td class="py-4 text-sm"><?= !empty($record['notes']) ? htmlspecialchars($record['notes']) : '-' ?></td>
-                      <td class="py-4 text-sm"><?= htmlspecialchars($record['explanation'] ?? '-') ?></td>
+                      <td class="py-4 text-sm hover:cursor-pointer max-w-xs lg:max-w-sm truncate"
+                        title="<?= htmlspecialchars($record['explanation'] ?? '-') ?>">
+                        <?= htmlspecialchars($record['explanation'] ?? '-') ?>
+                      </td>
                     </tr>
                   <?php endforeach; ?>
                 <?php else: ?>
                   <tr>
-                    <td colspan="7" class="py-4 text-center text-gray-500">No attendance records found for this date.</td>
+                    <td colspan="8" class="py-4 text-center text-gray-500">No attendance records found for this date.</td>
                   </tr>
                 <?php endif; ?>
               </tbody>
