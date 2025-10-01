@@ -21,9 +21,17 @@ $validNotes = [
   'Late: WFH',
   'Late: WFO',
   'Late: WAC',
-  'Late: WFA'
+  'Late: WFA',
+  'Absence Reason: Absent',
+  'Absence Reason: Forgot',
+  'Absence Reason: Sick',
+  'Absence Reason: Leave',
+  'Absence Reason: Others',
 ];
 $notesFilter = in_array($_GET['notes'] ?? '', $validNotes) ? ($_GET['notes'] ?? '') : '';
+
+// Filter user untuk monthly
+$userFilter = $_GET['user_id'] ?? '';
 
 // Fungsi bantu URL pagination daily
 function buildDailyUrl($page, $date, $notes)
@@ -87,7 +95,20 @@ $limitMonthly = 10;
 $monthlyPage = isset($_GET['monthly_page']) ? max(1, (int)$_GET['monthly_page']) : 1;
 $monthlyOffset = ($monthlyPage - 1) * $limitMonthly;
 
-$countMonthly = $pdo->query("SELECT COUNT(*) FROM users WHERE is_active = 1");
+// Query untuk mendapatkan daftar user untuk filter dropdown
+$usersStmt = $pdo->query("SELECT user_id, name FROM users WHERE is_active = 1 ORDER BY name");
+$users = $usersStmt->fetchAll();
+
+// Hitung total monthly dengan filter
+$sqlCountMonthly = "SELECT COUNT(*) FROM users WHERE is_active = 1";
+$paramsMonthly = [];
+if (!empty($userFilter)) {
+  $sqlCountMonthly .= " AND user_id = ?";
+  $paramsMonthly[] = $userFilter;
+}
+
+$countMonthly = $pdo->prepare($sqlCountMonthly);
+$countMonthly->execute($paramsMonthly);
 $totalMonthly = (int)$countMonthly->fetchColumn();
 $totalMonthlyPages = ceil($totalMonthly / $limitMonthly);
 
@@ -98,7 +119,8 @@ if ($monthlyEndPage - $monthlyStartPage < 4) {
   $monthlyStartPage = max(1, $monthlyEndPage - 4);
 }
 
-$stmt = $pdo->prepare("
+// Query untuk data monthly dengan filter user
+$sqlMonthly = "
     SELECT u.user_id, u.name, 
            SUM(CASE 
                WHEN a.status = 'Hadir' AND a.notes LIKE 'Hadir:%' AND TIME(a.check_in) <= '07:45:00' THEN 1 
@@ -117,16 +139,52 @@ $stmt = $pdo->prepare("
                ELSE 0 
            END) as telat,
            SUM(CASE WHEN a.status = 'Izin' THEN 1 ELSE 0 END) as izin,
-           SUM(CASE WHEN a.status = 'Sakit' THEN 1 ELSE 0 END) as sakit
+           SUM(CASE WHEN a.status = 'Sakit' THEN 1 ELSE 0 END) as sakit,
+           COUNT(a.attendance_id) as total_records
     FROM users u
     LEFT JOIN attendance a ON a.user_id = u.user_id AND a.date BETWEEN ? AND ?
     WHERE u.is_active = 1
-    GROUP BY u.user_id
+";
+
+$paramsMonthlyQuery = [$start, $end];
+
+if (!empty($userFilter)) {
+  $sqlMonthly .= " AND u.user_id = ?";
+  $paramsMonthlyQuery[] = $userFilter;
+}
+
+$sqlMonthly .= " GROUP BY u.user_id
     ORDER BY u.name
-    LIMIT $limitMonthly OFFSET $monthlyOffset
-");
-$stmt->execute([$start, $end]);
+    LIMIT $limitMonthly OFFSET $monthlyOffset";
+
+$stmt = $pdo->prepare($sqlMonthly);
+$stmt->execute($paramsMonthlyQuery);
 $monthly = $stmt->fetchAll();
+
+// Hitung total untuk semua user (untuk summary)
+$sqlTotalMonthly = "
+    SELECT 
+           SUM(CASE 
+               WHEN a.status = 'Hadir' AND a.notes LIKE 'Hadir:%' AND TIME(a.check_in) <= '07:45:00' THEN 1 
+               ELSE 0 
+           END) as total_hadir_pagi,
+           SUM(CASE 
+               WHEN a.status = 'Hadir' AND a.notes LIKE 'Hadir:%' AND TIME(a.check_in) > '07:45:00' AND TIME(a.check_in) <= '13:10:00' THEN 1 
+               ELSE 0 
+           END) as total_hadir_siang,
+           SUM(CASE 
+               WHEN a.notes LIKE 'Late:%' THEN 1 
+               ELSE 0 
+           END) as total_telat,
+           SUM(CASE WHEN a.status = 'Izin' THEN 1 ELSE 0 END) as total_izin,
+           SUM(CASE WHEN a.status = 'Sakit' THEN 1 ELSE 0 END) as total_sakit
+    FROM attendance a 
+    WHERE a.date BETWEEN ? AND ?
+";
+
+$totalStmt = $pdo->prepare($sqlTotalMonthly);
+$totalStmt->execute([$start, $end]);
+$monthlyTotals = $totalStmt->fetch();
 
 include __DIR__ . '/header.php';
 ?>
@@ -183,24 +241,70 @@ include __DIR__ . '/header.php';
                 <option value="Late: WFO" <?= $notesFilter === 'Late: WFO' ? 'selected' : '' ?>>Late: WFO</option>
                 <option value="Late: WAC" <?= $notesFilter === 'Late: WAC' ? 'selected' : '' ?>>Late: WAC</option>
                 <option value="Late: WFA" <?= $notesFilter === 'Late: WFA' ? 'selected' : '' ?>>Late: WFA</option>
+                <option value="Absence Reason: Absent" <?= $notesFilter === 'Absence Reason: Absent' ? 'selected' : '' ?>>Absence Reason: Absent</option>
+                <option value="Absence Reason: Forgot" <?= $notesFilter === 'Absence Reason: Forgot' ? 'selected' : '' ?>>Absence Reason: Forgot</option>
+                <option value="Absence Reason: Sick" <?= $notesFilter === 'Absence Reason: Sick' ? 'selected' : '' ?>>Absence Reason: Sick</option>
+                <option value="Absence Reason: Leave" <?= $notesFilter === 'Absence Reason: Leave' ? 'selected' : '' ?>>Absence Reason: Leave</option>
+                <option value="Absence Reason: Others" <?= $notesFilter === 'Absence Reason: Others' ? 'selected' : '' ?>>Absence Reason: Others</option>
               </select>
             <?php else: ?>
               <!-- Monthly filter: Month -->
               <input type="month" name="month"
                 value="<?= htmlspecialchars($month) ?>"
                 class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+              
+              <!-- Monthly filter: User -->
+              <select name="user_id"
+                onchange="this.form.submit()"
+                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                <option value="">-- All Users --</option>
+                <?php foreach ($users as $user): ?>
+                  <option value="<?= $user['user_id'] ?>" <?= $userFilter == $user['user_id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($user['name']) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
             <?php endif; ?>
 
             <button type="submit"
               class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
               Filter
             </button>
-            <a href="export_excel.php?recap_type=<?= urlencode($recapType) ?>&date=<?= urlencode($date) ?>&month=<?= urlencode($month) ?>&notes=<?= urlencode($notesFilter) ?>"
+            <a href="export_excel.php?recap_type=<?= urlencode($recapType) ?>&date=<?= urlencode($date) ?>&month=<?= urlencode($month) ?>&notes=<?= urlencode($notesFilter) ?>&user_id=<?= urlencode($userFilter) ?>"
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
               Export Excel
             </a>
           </form>
         </div>
+
+        <!-- Monthly Summary Card -->
+        <?php if ($recapType === 'monthly' && empty($userFilter)): ?>
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">Monthly Summary - <?= date('F Y', strtotime($start)) ?></h3>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div class="text-center">
+                <div class="text-2xl font-bold text-green-700"><?= $monthlyTotals['total_hadir_pagi'] ?? 0 ?></div>
+                <div class="text-sm text-gray-600">Hadir Pagi</div>
+              </div>
+              <div class="text-center">
+                <div class="text-2xl font-bold text-green-600"><?= $monthlyTotals['total_hadir_siang'] ?? 0 ?></div>
+                <div class="text-sm text-gray-600">Hadir Siang</div>
+              </div>
+              <div class="text-center">
+                <div class="text-2xl font-bold text-yellow-600"><?= $monthlyTotals['total_telat'] ?? 0 ?></div>
+                <div class="text-sm text-gray-600">Telat</div>
+              </div>
+              <div class="text-center">
+                <div class="text-2xl font-bold text-indigo-600"><?= $monthlyTotals['total_izin'] ?? 0 ?></div>
+                <div class="text-sm text-gray-600">Izin</div>
+              </div>
+              <div class="text-center">
+                <div class="text-2xl font-bold text-purple-600"><?= $monthlyTotals['total_sakit'] ?? 0 ?></div>
+                <div class="text-sm text-gray-600">Sakit</div>
+              </div>
+            </div>
+          </div>
+        <?php endif; ?>
 
         <div class="overflow-x-auto">
           <table class="w-full">
@@ -218,7 +322,6 @@ include __DIR__ . '/header.php';
                   <th class="pb-3 font-medium text-gray-600">Explanation</th>
                 </tr>
               </thead>
-              <!-- Daily Table -->
               <tbody class="divide-y divide-gray-100">
                 <?php if (count($daily) > 0): ?>
                   <?php foreach ($daily as $record): ?>
@@ -248,10 +351,13 @@ include __DIR__ . '/header.php';
               <thead>
                 <tr class="text-left border-b border-gray-200">
                   <th class="pb-3 font-medium text-gray-600">Name</th>
-                  <th class="pb-3 font-medium text-gray-600 text-center">Total Hadir</th>
+                  <th class="pb-3 font-medium text-gray-600 text-center">Hadir Pagi</th>
+                  <th class="pb-3 font-medium text-gray-600 text-center">Hadir Siang</th>
+                  <th class="pb-3 font-medium text-gray-600 text-center">Hadir Invalid</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Telat</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Izin</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Sakit</th>
+                  <th class="pb-3 font-medium text-gray-600 text-center">Total Hadir</th>
                   <th class="pb-3 font-medium text-gray-600 text-center">Total Absen</th>
                 </tr>
               </thead>
@@ -263,16 +369,19 @@ include __DIR__ . '/header.php';
                   ?>
                     <tr class="hover:bg-gray-50 transition">
                       <td class="py-4 text-sm font-medium text-gray-800"><?= htmlspecialchars($record['name']) ?></td>
-                      <td class="py-4 text-sm text-center font-bold text-green-700"><?= $totalHadir ?></td>
+                      <td class="py-4 text-sm text-center text-green-700"><?= $record['hadir_shift_pagi'] ?? 0 ?></td>
+                      <td class="py-4 text-sm text-center text-green-600"><?= $record['hadir_shift_siang'] ?? 0 ?></td>
+                      <td class="py-4 text-sm text-center text-red-600"><?= $record['hadir_invalid'] ?? 0 ?></td>
                       <td class="py-4 text-sm text-center text-yellow-600"><?= $record['telat'] ?? 0 ?></td>
                       <td class="py-4 text-sm text-center text-indigo-600"><?= $record['izin'] ?? 0 ?></td>
                       <td class="py-4 text-sm text-center text-purple-600"><?= $record['sakit'] ?? 0 ?></td>
+                      <td class="py-4 text-sm text-center font-bold text-green-800"><?= $totalHadir ?></td>
                       <td class="py-4 text-sm text-center font-bold text-red-600"><?= $totalAbsen ?></td>
                     </tr>
                   <?php endforeach; ?>
                 <?php else: ?>
                   <tr>
-                    <td colspan="6" class="py-4 text-center text-gray-500">No monthly records found.</td>
+                    <td colspan="9" class="py-4 text-center text-gray-500">No monthly records found.</td>
                   </tr>
                 <?php endif; ?>
               </tbody>
@@ -370,7 +479,7 @@ include __DIR__ . '/header.php';
             <nav class="flex flex-wrap justify-center gap-1">
               <!-- First Page Button -->
               <?php if ($monthlyPage > 1): ?>
-                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=1"
+                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&user_id=<?= htmlspecialchars($userFilter) ?>&monthly_page=1"
                   class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
                   <span class="hidden sm:inline">&lt;&lt; First</span>
                   <span class="sm:hidden">First</span>
@@ -384,7 +493,7 @@ include __DIR__ . '/header.php';
 
               <!-- Previous Button -->
               <?php if ($monthlyPage > 1): ?>
-                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=<?= $monthlyPage - 1 ?>"
+                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&user_id=<?= htmlspecialchars($userFilter) ?>&monthly_page=<?= $monthlyPage - 1 ?>"
                   class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
                   <span class="hidden sm:inline">&lt; Prev</span>
                   <span class="sm:hidden">&lt;</span>
@@ -399,7 +508,7 @@ include __DIR__ . '/header.php';
               <!-- Page Numbers -->
               <div class="hidden xs:flex gap-1">
                 <?php for ($i = $monthlyStartPage; $i <= $monthlyEndPage; $i++): ?>
-                  <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=<?= $i ?>"
+                  <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&user_id=<?= htmlspecialchars($userFilter) ?>&monthly_page=<?= $i ?>"
                     class="<?= $i === $monthlyPage ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600 hover:bg-indigo-50' ?> px-3 py-2 border border-gray-300 rounded text-sm font-medium transition">
                     <?= $i ?>
                   </a>
@@ -413,7 +522,7 @@ include __DIR__ . '/header.php';
 
               <!-- Next Button -->
               <?php if ($monthlyPage < $totalMonthlyPages): ?>
-                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=<?= $monthlyPage + 1 ?>"
+                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&user_id=<?= htmlspecialchars($userFilter) ?>&monthly_page=<?= $monthlyPage + 1 ?>"
                   class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
                   <span class="hidden sm:inline">Next &gt;</span>
                   <span class="sm:hidden">&gt;</span>
@@ -427,7 +536,7 @@ include __DIR__ . '/header.php';
 
               <!-- Last Page Button -->
               <?php if ($monthlyPage < $totalMonthlyPages): ?>
-                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&monthly_page=<?= $totalMonthlyPages ?>"
+                <a href="?recap_type=monthly&month=<?= htmlspecialchars($month) ?>&user_id=<?= htmlspecialchars($userFilter) ?>&monthly_page=<?= $totalMonthlyPages ?>"
                   class="px-2 py-2 sm:px-3 bg-white text-indigo-600 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium transition whitespace-nowrap">
                   <span class="hidden sm:inline">Last &gt;&gt;</span>
                   <span class="sm:hidden">Last</span>

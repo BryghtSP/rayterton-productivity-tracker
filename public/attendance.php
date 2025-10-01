@@ -6,7 +6,7 @@ require_login();
 $user_id = $_SESSION['user']['user_id'];
 $today = date('Y-m-d');
 $current_time = date('H:i:s');
-$limit = 5;
+$limit = 7;
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $offset = ($page - 1) * $limit;
 

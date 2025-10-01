@@ -77,12 +77,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       </form>
 
-      <div class="mt-6 pt-6 border-t border-gray-100">
-        <p class="text-xs text-gray-500 text-center">
-          Admin default: admin@rayterton.local / admin123<br>
-          (ubah setelah instalasi)
-        </p>
-      </div>
+        <!-- <div class="mt-6 pt-6 border-t border-gray-100">
+          <p class="text-xs text-gray-500 text-center">
+            Admin default: admin@rayterton.local / admin123<br>
+            (ubah setelah instalasi)
+          </p>
+        </div> -->
     </div>
   </div>
 </body>

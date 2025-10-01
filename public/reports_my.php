@@ -7,8 +7,17 @@ $user_id = $_SESSION['user']['user_id'];
 $month = $_GET['month'] ?? date('Y-m');
 $start = $month . "-01";
 $end = date('Y-m-t', strtotime($start));
+$limit = 7;
+$page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+$offset = ($page - 1) * $limit;
 
-// get list
+// Hitung total data untuk pagination
+$totalStmt = $pdo->prepare("SELECT COUNT(*) FROM production_reports WHERE user_id = ? AND report_date BETWEEN ? AND ?");
+$totalStmt->execute([$user_id, $start, $end]);
+$total = (int)$totalStmt->fetchColumn();
+$totalPages = max(1, ceil($total / $limit));
+
+// Ambil data dengan pagination
 $stmt = $pdo->prepare("SELECT 
         pr.*,
         wf.workforce_name
@@ -16,11 +25,12 @@ $stmt = $pdo->prepare("SELECT
     LEFT JOIN work_force wf ON wf.workforce_id = pr.workforce_id
     WHERE pr.user_id = ? 
       AND pr.report_date BETWEEN ? AND ?
-    ORDER BY pr.report_date DESC, pr.report_id DESC");
+    ORDER BY pr.report_date DESC, pr.report_id DESC
+    LIMIT $limit OFFSET $offset");
 $stmt->execute([$user_id, $start, $end]);
 $rows = $stmt->fetchAll();
 
-// counts
+// Data untuk chart (tidak dipaginasi — tetap semua data harian)
 $stmt2 = $pdo->prepare("SELECT DATE(report_date) d, COUNT(*) c 
                         FROM production_reports 
                         WHERE user_id = ? AND report_date BETWEEN ? AND ? 
@@ -28,15 +38,12 @@ $stmt2 = $pdo->prepare("SELECT DATE(report_date) d, COUNT(*) c
 $stmt2->execute([$user_id, $start, $end]);
 $daily = $stmt2->fetchAll();
 
-$total = 0;
 $labels = [];
 $data = [];
 foreach ($daily as $r) {
   $labels[] = $r['d'];
   $data[] = (int)$r['c'];
-  $total += (int)$r['c'];
 }
-
 include __DIR__ . '/header.php';
 ?>
 
@@ -172,7 +179,83 @@ include __DIR__ . '/header.php';
             </tbody>
           </table>
         </div>
+        <!-- Pagination -->
+        <?php if ($totalPages > 1): ?>
+          <div class="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+            <div class="text-sm text-gray-600 whitespace-nowrap">
+              Showing <?= count($rows) ?> of <?= $total ?> records (Page <?= $page ?> of <?= $totalPages ?>)
+            </div>
+            <nav class="flex flex-wrap justify-center gap-1">
+              <!-- First Page -->
+              <?php if ($page > 1): ?>
+                <a href="?month=<?= htmlspecialchars($month) ?>&page=1"
+                  class="px-3 py-2 bg-white text-indigo-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium transition">
+                  &laquo; First
+                </a>
+              <?php else: ?>
+                <span class="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-300 rounded-lg text-sm font-medium cursor-not-allowed">
+                  &laquo; First
+                </span>
+              <?php endif; ?>
+  
+              <!-- Previous -->
+              <?php if ($page > 1): ?>
+                <a href="?month=<?= htmlspecialchars($month) ?>&page=<?= $page - 1 ?>"
+                  class="px-3 py-2 bg-white text-indigo-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium transition">
+                  &lsaquo; Prev
+                </a>
+              <?php else: ?>
+                <span class="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-300 rounded-lg text-sm font-medium cursor-not-allowed">
+                  &lsaquo; Prev
+                </span>
+              <?php endif; ?>
+  
+              <!-- Page Numbers -->
+              <?php
+              $startPage = max(1, $page - 2);
+              $endPage = min($totalPages, $page + 2);
+  
+              for ($i = $startPage; $i <= $endPage; $i++): ?>
+                <?php if ($i == $page): ?>
+                  <span class="px-3 py-2 bg-indigo-600 text-white border border-gray-300 rounded-lg text-sm font-medium">
+                    <?= $i ?>
+                  </span>
+                <?php else: ?>
+                  <a href="?month=<?= htmlspecialchars($month) ?>&page=<?= $i ?>"
+                    class="px-3 py-2 bg-white text-indigo-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium transition">
+                    <?= $i ?>
+                  </a>
+                <?php endif; ?>
+              <?php endfor; ?>
+  
+              <!-- Next -->
+              <?php if ($page < $totalPages): ?>
+                <a href="?month=<?= htmlspecialchars($month) ?>&page=<?= $page + 1 ?>"
+                  class="px-3 py-2 bg-white text-indigo-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium transition">
+                  Next &rsaquo;
+                </a>
+              <?php else: ?>
+                <span class="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-300 rounded-lg text-sm font-medium cursor-not-allowed">
+                  Next &rsaquo;
+                </span>
+              <?php endif; ?>
+  
+              <!-- Last -->
+              <?php if ($page < $totalPages): ?>
+                <a href="?month=<?= htmlspecialchars($month) ?>&page=<?= $totalPages ?>"
+                  class="px-3 py-2 bg-white text-indigo-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium transition">
+                  Last &raquo;
+                </a>
+              <?php else: ?>
+                <span class="px-3 py-2 bg-gray-100 text-gray-400 border border-gray-300 rounded-lg text-sm font-medium cursor-not-allowed">
+                  Last &raquo;
+                </span>
+              <?php endif; ?>
+            </nav>
+          </div>
+        <?php endif; ?>
       </div>
+
     </div>
   </div>
 </body>
