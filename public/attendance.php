@@ -26,37 +26,37 @@ if (isset($_POST['submitAbsenceReason'])) {
     $absence_date = $today; // SELALU hari ini, tidak bisa pilih kemarin
     $absence_type = $_POST['absence_type'] ?? '';
     $explanation = trim($_POST['explanation'] ?? '');
-    
+
     // Validasi input
     if (empty($absence_type) || empty($explanation)) {
         header("Location: attendance.php?error=missing_data");
         exit;
     }
-    
+
     // Validasi: Hanya boleh input untuk hari ini
     if ($absence_date !== $today) {
         header("Location: attendance.php?error=invalid_date");
         exit;
     }
-    
+
     // Validasi: Batas waktu hari ini sampai 23:59
     if ($current_time >= '23:59:59') {
         header("Location: attendance.php?error=time_expired");
         exit;
     }
-    
+
     // Cek apakah sudah ada attendance record untuk hari ini
     $stmt = $pdo->prepare("SELECT * FROM attendance WHERE user_id = ? AND date = ?");
     $stmt->execute([$user_id, $absence_date]);
     $existing = $stmt->fetch();
-    
+
     if ($existing) {
         // Jika sudah ada record, hanya bisa update jika statusnya masih kosong/null
         if ($existing['status'] !== null && $existing['status'] !== '') {
             header("Location: attendance.php?error=already_attended");
             exit;
         }
-        
+
         // Update existing record
         $stmt = $pdo->prepare("UPDATE attendance SET status = ?, notes = ?, explanation = ?, updated_at = NOW() 
                               WHERE user_id = ? AND date = ?");
@@ -67,7 +67,7 @@ if (isset($_POST['submitAbsenceReason'])) {
                               VALUES (?, ?, ?, ?, ?, NOW())");
         $stmt->execute([$user_id, $absence_date, $absence_type, "Absence Reason: $absence_type", $explanation]);
     }
-    
+
     header("Location: attendance.php?success=absence_reason_submitted");
     exit;
 }
@@ -140,7 +140,7 @@ if (isset($_POST['submitCheckIn'])) {
     // Cek keterlambatan
     $is_late = false;
     $current_minutes = (int)date('H') * 60 + (int)date('i');
-    
+
     if ($shift === 'Morning' && $current_minutes > (8 * 60 + 15)) {
         $is_late = true;
     } elseif ($shift === 'Afternoon' && $current_minutes > (13 * 60 + 30)) {
@@ -202,9 +202,9 @@ $attendance = $stmt->fetch();
 $is_leave = $attendance && in_array($attendance['status'], ['Leave', 'Sick', 'Others', 'Absent', 'Forgot']);
 
 // REVISI: Hanya bisa input absence reason untuk hari ini saja, sampai jam 23:59
-$can_input_absence = ($current_time < '23:59:59') && 
-                     (!$attendance || empty($attendance['status']) || 
-                      in_array($attendance['status'], ['', null]));
+$can_input_absence = ($current_time < '23:59:59') &&
+    (!$attendance || empty($attendance['status']) ||
+        in_array($attendance['status'], ['', null]));
 
 // Get monthly attendance dengan pagination
 $month = $_GET['month'] ?? date('Y-m');
@@ -267,9 +267,11 @@ include __DIR__ . '/header.php';
                         <!-- Input Absence Reason Button -->
                         <?php if ($can_input_absence): ?>
                             <button type="button" id="btnAbsenceReason"
-                                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition whitespace-nowrap">
+                                class="px-4 py-2 text-sm font-medium rounded-lg transition whitespace-nowrap hover:opacity-85 hover:cursor-pointer"
+                                style="background-color: #9333ea; color: white;">
                                 📝 Input Absence Reason
                             </button>
+
                         <?php endif; ?>
                     </div>
                 </div>
