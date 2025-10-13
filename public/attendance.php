@@ -402,7 +402,7 @@ include __DIR__ . '/header.php';
 
                     <div class="flex justify-end gap-2">
                         <button type="button" id="closeModalAbsenceReason" class="px-4 py-2 bg-gray-300 rounded-lg">Batal</button>
-                        <button type="submit" name="submitAbsenceReason" class="px-4 py-2 bg-purple-600 text-white rounded-lg">Submit</button>
+                        <button type="submit" name="submitAbsenceReason" class="px-4 py-2 bg-green-500 hover:bg-green-700 text-white rounded-lg">Submit</button>
                     </div>
                 </form>
             </div>
